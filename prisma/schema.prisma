@@ -1,0 +1,102 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  name                String
+  timezone            String              @default("America/New_York")
+  preferences         String              // JSON string
+  maxDailyWorkMinutes Int                 @default(150)
+  preferredBlockMinutes Int               @default(60)
+  noWorkAfter         String              @default("22:00")
+  workDays            String              // JSON string of booleans (Mon-Sun)
+  
+  courses             Course[]
+  tasks               Task[]
+  workBlocks          WorkBlock[]
+  availabilityBlocks  AvailabilityBlock[]
+
+  // Canvas OAuth
+  canvasAccessToken    String?
+  canvasRefreshToken   String?
+  canvasTokenExpiresAt DateTime?
+}
+
+model Course {
+  id     String @id @default(uuid())
+  userId String
+  name   String
+  code   String
+  sourceId String?
+  color  String?
+  startDate DateTime?
+  endDate   DateTime?
+  syllabus String? // Store HTML syllabus content
+
+  user   User   @relation(fields: [userId], references: [id])
+  tasks  Task[]
+  classPeriods ClassPeriod[]
+}
+
+model ClassPeriod {
+  id        String   @id @default(uuid())
+  courseId  String
+  dayOfWeek Int      // 0-6 (Sun-Sat)
+  startTime String   // "HH:MM" 24h format
+  endTime   String   // "HH:MM" 24h format
+  location  String?
+  
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id               String    @id @default(uuid())
+  userId           String
+  courseId         String?
+  source           String    // "canvas", "manual", "syllabus"
+  sourceId         String?   // Canvas assignment id
+  title            String
+  description      String?
+  dueAt            DateTime?
+  points           Float?
+  status           String    @default("todo") // "todo", "doing", "done", "archived"
+  estimatedMinutes Int?
+  difficulty       String?   // "easy", "med", "hard"
+  needsWorkBlocks  Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id])
+  course     Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  workBlocks WorkBlock[]
+}
+
+model WorkBlock {
+  id              String   @id @default(uuid())
+  taskId          String
+  userId          String
+  startAt         DateTime
+  durationMinutes Int
+  kind            String   // "work", "review", "submit"
+  status          String   @default("planned") // "planned", "done", "skipped"
+  isLocked        Boolean  @default(false)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AvailabilityBlock {
+  id        String @id @default(uuid())
+  userId    String
+  dayOfWeek Int    // 0-6
+  startTime String // "18:00"
+  endTime   String // "23:00"
+
+  user User @relation(fields: [userId], references: [id])
+}
