@@ -44,7 +44,7 @@ export default async function CalendarPage() {
         description: t.description,
         status: t.status,
         estimatedMinutes: t.estimatedMinutes,
-        course: t.course ? { color: t.course.color } : undefined
+        course: t.course ? { code: t.course.code, color: t.course.color } : undefined
     }));
 
     const serializableBlocks = workBlocks.map(b => ({
@@ -54,7 +54,7 @@ export default async function CalendarPage() {
             id: b.task.id,
             title: b.task.title,
             dueAt: b.task.dueAt ? b.task.dueAt.toISOString() : undefined,
-            course: b.task.course ? { color: b.task.course.color } : undefined,
+            course: b.task.course ? { code: b.task.course.code, color: b.task.course.color } : undefined,
             status: b.task.status
         }
     }));
