@@ -13,6 +13,16 @@ type WorkBlock = {
     task: { id: string; title: string; dueAt?: string; course?: { color: string | null }; status?: string };
 };
 
+const getTaskColor = (taskId: string): string => {
+    let hash = 0;
+    for (let i = 0; i < taskId.length; i++) {
+        hash = taskId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    // Saturation 70%, Lightness 45% ensures text is readable and colors are vibrant
+    return `hsl(${h}, 70%, 45%)`;
+};
+
 type Task = {
     id: string;
     title: string;
@@ -652,7 +662,7 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                                     ${isActive ? 'ring-4 ring-yellow-400 ring-offset-2 animate-pulse shadow-lg z-10' : ''}
                                                     ${isNewlyAdded ? 'ring-4 ring-green-400 ring-offset-2 scale-105 shadow-xl z-20 transition-transform' : ''}`}
                                                 style={{
-                                                    backgroundColor: wb.task.course?.color || '#3B82F6',
+                                                    backgroundColor: getTaskColor(wb.task.id),
                                                     opacity: selectionMode && !isSelected ? 0.5 : undefined
                                                 }}
                                                 onClick={(e) => {

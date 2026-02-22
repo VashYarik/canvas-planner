@@ -42,13 +42,44 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
 
     let lockedBlocks: any[] = [];
     if (mode === 'update') {
-        lockedBlocks = await prisma.workBlock.findMany({
+        const rawLockedBlocks = await prisma.workBlock.findMany({
             where: {
                 userId,
                 status: 'planned',
                 isLocked: true
             },
             include: { task: true }
+        });
+
+        // Filter out locked blocks that overlap with a class period
+        lockedBlocks = rawLockedBlocks.filter((lb: any) => {
+            const lbStart = new Date(lb.startAt);
+            const lbEnd = addMinutes(lbStart, lb.durationMinutes);
+            const dayIndex = getDay(lbStart);
+
+            const hasOverlap = classPeriods.some(cp => {
+                if (cp.dayOfWeek !== dayIndex) return false;
+
+                if (cp.courseStart && isBefore(lbStart, startOfDay(cp.courseStart))) return false;
+                if (cp.courseEnd && isAfter(lbStart, endOfDay(cp.courseEnd))) return false;
+
+                const [cpStartH, cpStartM] = cp.startTime.split(':').map(Number);
+                const [cpEndH, cpEndM] = cp.endTime.split(':').map(Number);
+
+                const cpStartDate = new Date(lbStart);
+                cpStartDate.setHours(cpStartH, cpStartM, 0, 0);
+
+                const cpEndDate = new Date(lbStart);
+                cpEndDate.setHours(cpEndH, cpEndM, 0, 0);
+
+                return isBefore(lbStart, cpEndDate) && isAfter(lbEnd, cpStartDate);
+            });
+
+            if (hasOverlap) {
+                console.log(`[Planner] Locked block for task ${lb.task?.title || lb.taskId} overlaps with class period. Unlocking for reschedule.`);
+                return false;
+            }
+            return true;
         });
     }
 
