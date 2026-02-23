@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { listCourses } from '@/lib/canvas_api';
+import { getDbUser } from '@/lib/auth';
 
 export async function POST() {
     try {
-        // 1. Fetch Requesting User (Mock for MVP)
-        let user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'No user found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // 2. Fetch Courses from Canvas
         console.log('Fetching courses from Canvas...');
-        const canvasCourses = await listCourses();
+        // TODO: Pass user.id or canvas token to listCourses if it starts taking it per-user
+        const canvasCourses = await listCourses(user.id);
         console.log(`Found ${canvasCourses.length} courses.`);
 
         // 3. Sync to DB
@@ -40,6 +41,7 @@ export async function POST() {
                         userId: user.id,
                         name: c.name,
                         code: c.course_code,
+                        sourceId: c.id.toString(), // We added sourceId earlier to schema
                         // Random color generator could go here
                         color: '#' + Math.floor(Math.random() * 16777215).toString(16)
                     }

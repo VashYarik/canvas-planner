@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDbUser } from '@/lib/auth';
 
 // POST /api/blocks - Create a new work block manually
 export async function POST(request: Request) {
     try {
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { taskId, startAt, durationMinutes } = body;
 
@@ -16,15 +22,15 @@ export async function POST(request: Request) {
             select: { userId: true, estimatedMinutes: true }
         });
 
-        if (!taskInfo) {
-            return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+        if (!taskInfo || taskInfo.userId !== user.id) {
+            return NextResponse.json({ error: 'Task not found or unauthorized' }, { status: 404 });
         }
 
         // Create the localized workblock, defaulting to locked since it's user-placed
         const block = await prisma.workBlock.create({
             data: {
                 taskId,
-                userId: taskInfo.userId, // use the task's user
+                userId: user.id, // verified user
                 startAt: new Date(startAt),
                 durationMinutes: parseInt(durationMinutes),
                 kind: 'work',

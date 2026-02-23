@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDbUser } from '@/lib/auth';
 
 export async function GET() {
     try {
-        // Mock user fetch
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json([]);
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const blocks = await prisma.availabilityBlock.findMany({
@@ -44,11 +44,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        // Mock user
-        let user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            // Should have been created by now, but just in case
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const body = await request.json();

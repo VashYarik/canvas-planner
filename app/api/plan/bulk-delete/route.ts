@@ -1,7 +1,7 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { getDbUser } from '@/lib/auth';
 
 const BulkDeleteSchema = z.object({
     ids: z.array(z.string())
@@ -9,9 +9,9 @@ const BulkDeleteSchema = z.object({
 
 export async function POST(req: Request) {
     try {
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const body = await req.json();

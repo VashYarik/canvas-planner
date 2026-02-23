@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { listCourses, listAssignments, CanvasAssignment } from '@/lib/canvas_api';
 import { prisma } from '@/lib/prisma';
-
+import { getDbUser } from '@/lib/auth';
 
 export async function POST() {
     try {
-        const courses = await listCourses();
-        const user = await prisma.user.findFirst(); // Assuming single user for now
-
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const courses = await listCourses(user.id);
 
         const results = [];
 
@@ -55,7 +55,7 @@ export async function POST() {
             console.log(`[Sync] Fetching API assignments for ${course.name}...`);
             let apiAssignments: CanvasAssignment[] = [];
             try {
-                apiAssignments = await listAssignments(course.id);
+                apiAssignments = await listAssignments(course.id, user.canvasAccessToken || undefined);
                 for (const a of apiAssignments) {
                     await upsertAssignment(user.id, course.id, a);
                 }

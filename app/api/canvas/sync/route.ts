@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { listCourses, listAssignments, CanvasAssignment } from "@/lib/canvas_api";
+import { getDbUser } from "@/lib/auth";
 
 export async function POST() {
     try {
-        // 1) Fetch requesting user (MVP: first user)
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: "No user found" }, { status: 404 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         // 2) Resolve Canvas token (user token first, then env fallback)

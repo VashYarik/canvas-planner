@@ -1,7 +1,7 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { getDbUser } from '@/lib/auth';
 
 const CreateCourseSchema = z.object({
     name: z.string().min(1),
@@ -22,10 +22,9 @@ export async function POST(req: Request) {
         const body = await req.json();
         const data = CreateCourseSchema.parse(body);
 
-        // Assume single user for now
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Create Course
@@ -65,8 +64,10 @@ export async function POST(req: Request) {
 
 export async function GET() {
     try {
-        const user = await prisma.user.findFirst();
-        if (!user) return NextResponse.json([]);
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const courses = await prisma.course.findMany({
             where: { userId: user.id },

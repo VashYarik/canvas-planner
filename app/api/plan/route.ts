@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { getDbUser } from '@/lib/auth';
 
 export async function GET() {
     try {
-        const user = await prisma.user.findFirst();
-        if (!user) return NextResponse.json([]);
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const now = new Date();
         // Just fetch all future/recent planned blocks
@@ -30,9 +33,9 @@ export async function GET() {
 
 export async function DELETE() {
     try {
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Fully wipe user's SCEDULE (Calendar items) but keep DATA (Tasks/Courses)

@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDbUser } from '@/lib/auth';
 
 // GET /api/tasks - List all tasks
 export async function GET() {
     try {
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const tasks = await prisma.task.findMany({
+            where: { userId: user.id },
             orderBy: [
                 { dueAt: 'asc' }, // nulls last? Prisma sorts nulls depends on DB, usually first/last. We handle logic later.
                 { createdAt: 'desc' }
@@ -28,21 +35,13 @@ export async function GET() {
 // POST /api/tasks - Create a new task
 export async function POST(request: Request) {
     try {
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { title, courseId, dueAt, estimatedMinutes, difficulty, description, needsWorkBlocks } = body;
-
-        // TODO: Validate required fields. For now assumes userId is fetched or passed.
-        // Since we don't have auth yet, we'll fetch the first user or create a default one.
-        let user = await prisma.user.findFirst();
-        if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    name: 'Default User',
-                    preferences: '{}',
-                    workDays: '{}'
-                }
-            });
-        }
 
         // Attempt to find the course if provided
         let targetCourseId = courseId || null;
@@ -74,10 +73,17 @@ export async function POST(request: Request) {
     }
 }
 
-// DELETE /api/tasks - Clear all tasks
+// DELETE /api/tasks - Clear all tasks for current user
 export async function DELETE() {
     try {
-        await prisma.task.deleteMany({});
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        await prisma.task.deleteMany({
+            where: { userId: user.id }
+        });
         return NextResponse.json({ message: 'All tasks deleted' });
     } catch (error) {
         console.error('Failed to delete tasks:', error);

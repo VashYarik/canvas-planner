@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { UserButton } from '@clerk/nextjs';
 
 export default function Layout({ children }: { children: ReactNode }) {
     return (
@@ -14,6 +15,9 @@ export default function Layout({ children }: { children: ReactNode }) {
                     <NavLink href="/courses" label="Courses" />
                     <NavLink href="/settings" label="Settings" />
                 </nav>
+                <div className="mt-8">
+                    <UserButton />
+                </div>
                 <div className="pt-4 border-t border-gray-100 mt-auto">
                     <p className="text-xs text-gray-400">MVP v0.1.0</p>
                     <div className="mt-4 text-[10px] text-gray-400">

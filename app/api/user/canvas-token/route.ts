@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDbUser } from '@/lib/auth';
 
 // GET /api/user/canvas-token - Check if the user has a token configured
 export async function GET() {
     try {
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Return a boolean so we don't leak the token to the frontend
@@ -20,13 +21,13 @@ export async function GET() {
 // POST /api/user/canvas-token - Save or clear the user's canvas token
 export async function POST(request: Request) {
     try {
+        const user = await getDbUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { token } = body;
-
-        const user = await prisma.user.findFirst();
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
 
         // If the token is empty/null, we clear it (disconnect)
         await prisma.user.update({
