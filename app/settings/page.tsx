@@ -13,11 +13,20 @@ export default function SettingsPage() {
     const [isEditingToken, setIsEditingToken] = useState(false);
 
     useEffect(() => {
-        fetch('/api/user/canvas-token').then(res => res.json()).then(data => {
-            if (data && data.hasToken !== undefined) {
-                setHasToken(data.hasToken);
-            }
-        }).catch(err => console.error(err));
+        fetch('/api/user/canvas-token')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.hasToken !== undefined) {
+                    setHasToken(data.hasToken);
+                } else {
+                    setHasToken(false);
+                    if (data?.error) console.error(data.error);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setHasToken(false);
+            });
     }, []);
 
     const handleSaveToken = async () => {
