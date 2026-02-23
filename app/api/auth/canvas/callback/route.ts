@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDbUser } from '@/lib/auth';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -52,17 +53,9 @@ export async function GET(request: Request) {
         // data = { access_token, refresh_token, user: { id, name }, expires_in }
 
         // Store tokens for the current user
-        // Assuming single-user mode for now, just find the first user or ensure user exists
-        let user = await prisma.user.findFirst();
+        let user = await getDbUser();
         if (!user) {
-            // Create a default user if none exists (first login)
-            user = await prisma.user.create({
-                data: {
-                    name: data.user.name || 'Student',
-                    preferences: '{}',
-                    workDays: '{}'
-                }
-            });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const expiresAt = new Date();

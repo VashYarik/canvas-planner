@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generatePlan } from '@/lib/planner';
 import { startOfWeek } from 'date-fns';
+import { getDbUser } from '@/lib/auth';
 
 export async function POST(request: Request) {
     try {
@@ -15,9 +16,9 @@ export async function POST(request: Request) {
             // body might be empty
         }
 
-        const user = await prisma.user.findFirst();
+        const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const today = new Date();
