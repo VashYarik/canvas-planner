@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import TimeSelect from './TimeSelect';
 
 type AvailabilityBlock = {
     dayOfWeek: number;
@@ -104,18 +105,14 @@ export default function AvailabilitySettings() {
                                     {dayBlocks.length === 0 && <span className="text-xs text-gray-400 italic">No availability</span>}
                                     {dayBlocks.map((block) => (
                                         <div key={block.globalIndex} className="flex items-center gap-2">
-                                            <input
-                                                type="time"
+                                            <TimeSelect
                                                 value={block.startTime}
-                                                onChange={(e) => updateBlock(block.globalIndex, 'startTime', e.target.value)}
-                                                className="border rounded px-2 py-1 text-sm text-gray-700"
+                                                onChange={(val) => updateBlock(block.globalIndex, 'startTime', val)}
                                             />
                                             <span className="text-gray-400">-</span>
-                                            <input
-                                                type="time"
+                                            <TimeSelect
                                                 value={block.endTime}
-                                                onChange={(e) => updateBlock(block.globalIndex, 'endTime', e.target.value)}
-                                                className="border rounded px-2 py-1 text-sm text-gray-700"
+                                                onChange={(val) => updateBlock(block.globalIndex, 'endTime', val)}
                                             />
                                             <button
                                                 onClick={() => removeBlock(block.globalIndex)}

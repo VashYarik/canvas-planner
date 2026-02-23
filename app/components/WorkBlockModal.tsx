@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import TimeSelect from './TimeSelect';
 
 type WorkBlock = {
     id: string;
@@ -20,8 +21,11 @@ type Props = {
 
 export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: Props) {
     const router = useRouter();
-    const [startAt, setStartAt] = useState(
-        block.startAt ? format(parseISO(block.startAt), "yyyy-MM-dd'T'HH:mm") : ''
+    const [startDate, setStartDate] = useState(
+        block.startAt ? format(parseISO(block.startAt), "yyyy-MM-dd") : ''
+    );
+    const [startTime, setStartTime] = useState(
+        block.startAt ? format(parseISO(block.startAt), "HH:mm") : '12:00'
     );
     const [duration, setDuration] = useState<number | ''>(block.durationMinutes);
     const [loading, setLoading] = useState(false);
@@ -33,7 +37,7 @@ export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: P
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    startAt: startAt ? new Date(startAt).toISOString() : null,
+                    startAt: startDate && startTime ? new Date(`${startDate}T${startTime}:00`).toISOString() : null,
                     durationMinutes: duration === '' ? 0 : duration
                 })
             });
@@ -83,13 +87,19 @@ export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: P
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Start Time</label>
-                        <input
-                            type="datetime-local"
-                            value={startAt}
-                            onChange={(e) => setStartAt(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
+                            />
+                            <TimeSelect
+                                value={startTime}
+                                onChange={(val) => setStartTime(val)}
+                            />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
@@ -108,6 +118,6 @@ export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: P
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

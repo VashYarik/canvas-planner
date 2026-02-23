@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import TimeSelect from './TimeSelect';
 
 interface ScheduleItem {
     id?: string;
@@ -276,21 +277,17 @@ export default function ManualCourseForm({ initialData, onSuccess, onCancel }: P
                         {/* Row 2: Time & Location */}
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700">Start Time</label>
-                                <input
-                                    type="time"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-1 border"
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Start Time</label>
+                                <TimeSelect
                                     value={period.startTime}
-                                    onChange={e => updatePeriod(index, 'startTime', e.target.value)}
+                                    onChange={val => updatePeriod(index, 'startTime', val)}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700">End Time</label>
-                                <input
-                                    type="time"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-1 border"
+                                <label className="block text-xs font-medium text-gray-700 mb-1">End Time</label>
+                                <TimeSelect
                                     value={period.endTime}
-                                    onChange={e => updatePeriod(index, 'endTime', e.target.value)}
+                                    onChange={val => updatePeriod(index, 'endTime', val)}
                                 />
                             </div>
                             <div>

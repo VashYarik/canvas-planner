@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import TimeSelect from './TimeSelect';
 
 export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
     const now = new Date();
@@ -209,12 +210,10 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     </select>
                 </div>
                 <div className="col-span-12 sm:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <input
-                        type="time"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                    <TimeSelect
                         value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        onChange={(val) => setTime(val)}
                     />
                 </div>
             </div>

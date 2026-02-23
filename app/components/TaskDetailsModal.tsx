@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import TimeSelect from './TimeSelect';
 
 type Task = {
     id: string;
@@ -25,7 +26,8 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(task.title);
-    const [dueAt, setDueAt] = useState(task.dueAt ? new Date(task.dueAt).toISOString().slice(0, 16) : '');
+    const [dueDate, setDueDate] = useState(task.dueAt ? format(new Date(task.dueAt), 'yyyy-MM-dd') : '');
+    const [dueTime, setDueTime] = useState(task.dueAt ? format(new Date(task.dueAt), 'HH:mm') : '23:59');
     const [needsWorkBlocks, setNeedsWorkBlocks] = useState(task.needsWorkBlocks);
     const [loading, setLoading] = useState(false);
 
@@ -67,7 +69,7 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     title,
-                    dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+                    dueAt: dueDate && dueTime ? new Date(`${dueDate}T${dueTime}:00`).toISOString() : null,
                     needsWorkBlocks
                 })
             });
@@ -121,13 +123,19 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Due Date</label>
-                            <input
-                                type="datetime-local"
-                                value={dueAt}
-                                onChange={(e) => setDueAt(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
-                            />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
+                                />
+                                <TimeSelect
+                                    value={dueTime}
+                                    onChange={(val) => setDueTime(val)}
+                                />
+                            </div>
                         </div>
                         <div className="flex items-center">
                             <input

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ManualCourseForm from '@/app/components/ManualCourseForm';
+import { formatTimeAMPM } from '@/lib/timeUtils';
 
 interface ClassPeriod {
     id: string;
@@ -172,7 +173,7 @@ export default function CourseManager({ initialCourses }: Props) {
                                             <span className="font-medium w-8">
                                                 {p.days.map(d => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][d]).join('')}
                                             </span>
-                                            <span>{p.startTime} - {p.endTime}</span>
+                                            <span>{formatTimeAMPM(p.startTime)} - {formatTimeAMPM(p.endTime)}</span>
                                             {p.location && <span className="text-gray-500">({p.location})</span>}
                                         </div>
                                     ))}

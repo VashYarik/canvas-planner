@@ -2,6 +2,37 @@ import { prisma } from '@/lib/prisma';
 import { addDays, subDays, startOfDay, endOfDay, isBefore, isAfter, addMinutes, format, parse, getDay, isSameDay } from 'date-fns';
 import { estimateTaskDuration } from '@/lib/ai';
 
+function createZonedDate(baseDate: Date, timeStr: string, timeZone: string): Date {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+
+    // Extract the local year/month/date for this specific timezone to prevent UTC day shifting
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    const [monthStr, dateStr, yearStr] = formatter.format(baseDate).split('/');
+    const year = Number(yearStr);
+    const month = Number(monthStr) - 1;
+    const date = Number(dateStr);
+
+    const dummyDate = new Date(Date.UTC(year, month, date, 12, 0, 0));
+    const tzString = dummyDate.toLocaleString('en-US', { timeZone, timeZoneName: 'shortOffset' });
+
+    let offset = 'Z';
+    const match = tzString.match(/GMT([+-]\d+(:?\d+)?)/);
+    if (match) {
+        let rawOffset = match[1];
+        if (!rawOffset.includes(':')) rawOffset += ':00';
+        if (rawOffset.length === 5) rawOffset = rawOffset[0] + '0' + rawOffset.substring(1);
+        offset = rawOffset;
+    }
+
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00${offset}`;
+    return new Date(isoDate);
+}
+
 type TimeSlot = {
     start: Date;
     end: Date;
@@ -14,6 +45,7 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
     // 1. Fetch Data
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const preferredWorkUnit = user?.preferredBlockMinutes || 60;
+    const userTz = user?.timezone || 'America/New_York';
 
     const tasks = await prisma.task.findMany({
         where: {
@@ -63,14 +95,8 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
                 if (cp.courseStart && isBefore(lbStart, startOfDay(cp.courseStart))) return false;
                 if (cp.courseEnd && isAfter(lbStart, endOfDay(cp.courseEnd))) return false;
 
-                const [cpStartH, cpStartM] = cp.startTime.split(':').map(Number);
-                const [cpEndH, cpEndM] = cp.endTime.split(':').map(Number);
-
-                const cpStartDate = new Date(lbStart);
-                cpStartDate.setHours(cpStartH, cpStartM, 0, 0);
-
-                const cpEndDate = new Date(lbStart);
-                cpEndDate.setHours(cpEndH, cpEndM, 0, 0);
+                const cpStartDate = createZonedDate(new Date(lbStart), cp.startTime, userTz);
+                const cpEndDate = createZonedDate(new Date(lbStart), cp.endTime, userTz);
 
                 return isBefore(lbStart, cpEndDate) && isAfter(lbEnd, cpStartDate);
             });
@@ -111,14 +137,8 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
 
         for (const block of dayBlocks) {
             // Parse "18:00" -> Date object
-            const [startH, startM] = block.startTime.split(':').map(Number);
-            const [endH, endM] = block.endTime.split(':').map(Number);
-
-            const start = new Date(currentDate);
-            start.setHours(startH, startM, 0, 0);
-
-            const end = new Date(currentDate);
-            end.setHours(endH, endM, 0, 0);
+            const start = createZonedDate(currentDate, block.startTime, userTz);
+            const end = createZonedDate(currentDate, block.endTime, userTz);
 
             // Skip if slot is in the past
             if (isBefore(end, now)) continue;
@@ -133,10 +153,8 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
             // Combine exclusions: Classes + Locked Blocks
             const exclusions = [
                 ...dayClasses.map(cp => {
-                    const [cpStartH, cpStartM] = cp.startTime.split(':').map(Number);
-                    const [cpEndH, cpEndM] = cp.endTime.split(':').map(Number);
-                    const s = new Date(currentDate); s.setHours(cpStartH, cpStartM, 0, 0);
-                    const e = new Date(currentDate); e.setHours(cpEndH, cpEndM, 0, 0);
+                    const s = createZonedDate(currentDate, cp.startTime, userTz);
+                    const e = createZonedDate(currentDate, cp.endTime, userTz);
                     return { start: s, end: e };
                 }),
                 ...dayLockedBlocks.map(lb => {
