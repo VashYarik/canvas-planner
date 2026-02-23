@@ -114,7 +114,6 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
         where: {
             userId,
             status: 'planned',
-            taskId: { in: tasks.map(t => t.id) }, // Delete ALL planned blocks for active tasks
             id: mode === 'update' ? { notIn: lockedBlocks.map(b => b.id) } : undefined
         }
     });
