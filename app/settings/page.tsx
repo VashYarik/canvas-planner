@@ -83,6 +83,42 @@ export default function SettingsPage() {
         }
     };
 
+    const [resetMessage, setResetMessage] = useState('');
+
+    const handleResetAccount = async () => {
+        if (!confirm("🚨 WARNING: This will PERMANENTLY erase all your courses, tasks, and schedule, and reset your account to default settings. Are you absolutely sure?")) {
+            return;
+        }
+
+        if (!confirm("Just being completely sure: Are you really sure you want to delete EVERYTHING?")) {
+            return;
+        }
+
+        setLoading(true);
+        setResetMessage('');
+        try {
+            const res = await fetch('/api/user/reset', { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                setResetMessage('Account successfully reset. Refreshing...');
+                setHasToken(false);
+                setTokenInput('');
+                setCourses([]);
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                setResetMessage(`Error: ${data.error}`);
+            }
+        } catch (err) {
+            setResetMessage('Network error while resetting account.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-gray-800 mb-6">Settings</h2>
@@ -190,6 +226,26 @@ export default function SettingsPage() {
                             ))}
                         </ul>
                     </div>
+                )}
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 mb-6">
+                <h3 className="text-lg font-semibold mb-2 text-red-600">Danger Zone</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                    Resetting your account will permanently delete all your tasks, courses, schedule, and personalized settings. This action cannot be undone.
+                </p>
+                <button
+                    onClick={handleResetAccount}
+                    disabled={loading}
+                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 hover:text-red-700 transition disabled:opacity-50 text-sm font-medium border border-red-200"
+                >
+                    {loading ? 'Processing...' : 'Reset Account to Default'}
+                </button>
+                {resetMessage && (
+                    <p className={`mt-3 text-sm p-3 rounded bg-gray-50 ${resetMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                        {resetMessage}
+                    </p>
                 )}
             </div>
         </div>

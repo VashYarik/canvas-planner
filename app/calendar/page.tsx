@@ -1,16 +1,24 @@
 import { prisma } from '@/lib/prisma';
 import Calendar from '@/app/components/Calendar';
 import { addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { getDbUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';
 
 export default async function CalendarPage() {
+    const user = await getDbUser();
+    if (!user) {
+        redirect('/sign-in');
+    }
+
     // Fetch tasks and blocks for a reasonable window (e.g., this month)
     // For simplicity, we fetch all active planned items for now.
 
     const tasks = await prisma.task.findMany({
         where: {
+            userId: user.id,
             // Include status: 'done' tasks so they are shown in the calendar crossed out
             dueAt: { not: null }
         },
@@ -19,6 +27,7 @@ export default async function CalendarPage() {
 
     const workBlocks = await prisma.workBlock.findMany({
         where: {
+            userId: user.id,
             status: { in: ['planned', 'done'] }
         },
         include: {
@@ -29,6 +38,11 @@ export default async function CalendarPage() {
     });
 
     const classPeriods = await prisma.classPeriod.findMany({
+        where: {
+            course: {
+                userId: user.id
+            }
+        },
         include: {
             course: true
         }
