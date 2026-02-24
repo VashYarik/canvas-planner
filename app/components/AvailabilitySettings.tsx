@@ -104,23 +104,25 @@ export default function AvailabilitySettings() {
                                 <div className="space-y-2 ml-4">
                                     {dayBlocks.length === 0 && <span className="text-xs text-gray-400 italic">No availability</span>}
                                     {dayBlocks.map((block) => (
-                                        <div key={block.globalIndex} className="flex items-center gap-2">
+                                        <div key={block.globalIndex} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-gray-50 p-2 rounded-md sm:bg-transparent sm:p-0">
                                             <TimeSelect
                                                 value={block.startTime}
                                                 onChange={(val) => updateBlock(block.globalIndex, 'startTime', val)}
                                             />
-                                            <span className="text-gray-400">-</span>
+                                            <span className="text-gray-400 hidden sm:inline">-</span>
                                             <TimeSelect
                                                 value={block.endTime}
                                                 onChange={(val) => updateBlock(block.globalIndex, 'endTime', val)}
                                             />
-                                            <button
-                                                onClick={() => removeBlock(block.globalIndex)}
-                                                className="text-red-400 hover:text-red-600 ml-2"
-                                                title="Remove"
-                                            >
-                                                &times;
-                                            </button>
+                                            <div className="w-full sm:w-auto flex justify-end">
+                                                <button
+                                                    onClick={() => removeBlock(block.globalIndex)}
+                                                    className="text-red-400 hover:text-red-600 sm:ml-2"
+                                                    title="Remove"
+                                                >
+                                                    &times; Remove
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

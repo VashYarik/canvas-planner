@@ -26,6 +26,7 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(task.title);
+    const [description, setDescription] = useState(task.description || '');
     const [dueDate, setDueDate] = useState(task.dueAt ? format(new Date(task.dueAt), 'yyyy-MM-dd') : '');
     const [dueTime, setDueTime] = useState(task.dueAt ? format(new Date(task.dueAt), 'HH:mm') : '23:59');
     const [needsWorkBlocks, setNeedsWorkBlocks] = useState(task.needsWorkBlocks);
@@ -69,6 +70,7 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     title,
+                    description: description.trim() || null,
                     dueAt: dueDate && dueTime ? new Date(`${dueDate}T${dueTime}:00`).toISOString() : null,
                     needsWorkBlocks
                 })
@@ -123,6 +125,15 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                             />
                         </div>
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Add notes or details..."
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 min-h-[100px] text-sm"
+                            />
+                        </div>
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                             <div className="flex gap-2">
                                 <input
@@ -158,7 +169,12 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                     <div className="space-y-4">
                         <div>
                             <h3 className="font-semibold text-lg">{task.title}</h3>
-                            <p className="text-sm text-gray-500">
+                            {task.description && (
+                                <div className="mt-3 bg-blue-50/50 border-l-4 border-blue-400 p-3 rounded-r-md">
+                                    <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">{task.description}</p>
+                                </div>
+                            )}
+                            <p className="text-sm text-gray-500 mt-4">
                                 Due: {task.dueAt ? format(new Date(task.dueAt), 'PPpp') : 'No due date'}
                             </p>
                             {task.status && <span className="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 mt-2 capitalize">{task.status}</span>}

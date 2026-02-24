@@ -6,6 +6,7 @@ import TimeSelect from './TimeSelect';
 export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
     const now = new Date();
     const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [month, setMonth] = useState(now.getMonth());
     const [day, setDay] = useState(now.getDate());
     const [time, setTime] = useState('23:59');
@@ -57,6 +58,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
         try {
             const payload: any = {
                 title,
+                description: description.trim() || null,
                 dueAt: dueAt.toISOString(),
                 estimatedMinutes: estimatedMinutes || null,
                 difficulty,
@@ -75,6 +77,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
 
             if (res.ok) {
                 setTitle('');
+                setDescription('');
                 // Reset to today
                 const resetDate = new Date();
                 setMonth(resetDate.getMonth());
@@ -106,6 +109,16 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     required
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     placeholder="e.g. Math Homework"
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border min-h-[80px]"
+                    placeholder="Add notes or details..."
                 />
             </div>
 
