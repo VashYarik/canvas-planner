@@ -1,0 +1,61 @@
+
+> planner@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Γ£ö Generated Prisma Client (v5.22.0) to .\node_modules\@prisma\client in 137ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 5.3s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/21) ...
+  Generating static pages using 15 workers (5/21) 
+  Generating static pages using 15 workers (10/21) 
+  Generating static pages using 15 workers (15/21) 
+Γ£ô Generating static pages using 15 workers (21/21) in 720.2ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /api/auth/canvas/callback
+Γö£ ╞Æ /api/auth/canvas/login
+Γö£ ╞Æ /api/availability
+Γö£ ╞Æ /api/blocks
+Γö£ ╞Æ /api/blocks/[id]
+Γö£ ╞Æ /api/canvas/sync
+Γö£ ╞Æ /api/canvas/sync-courses
+Γö£ ╞Æ /api/canvas/sync-syllabus
+Γö£ ╞Æ /api/courses
+Γö£ ╞Æ /api/courses/[courseId]
+Γö£ ╞Æ /api/courses/bulk-delete
+Γö£ ╞Æ /api/plan
+Γö£ ╞Æ /api/plan/bulk-delete
+Γö£ ╞Æ /api/plan/generate
+Γö£ ╞Æ /api/tasks
+Γö£ ╞Æ /api/tasks/[id]
+Γö£ ╞Æ /api/user/canvas-token
+Γö£ ╞Æ /api/user/reset
+Γö£ ╞Æ /calendar
+Γö£ ╞Æ /courses
+Γö£ Γùï /settings
+Γö£ ╞Æ /sign-in/[[...sign-in]]
+Γö£ ╞Æ /sign-up/[[...sign-up]]
+Γöö Γùï /tasks
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

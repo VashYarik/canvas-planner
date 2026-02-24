@@ -173,6 +173,7 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
             try {
                 const { polyfill } = await import('mobile-drag-drop');
                 const { scrollBehaviourDragImageTranslateOverride } = await import('mobile-drag-drop/scroll-behaviour');
+                // @ts-ignore
                 await import('mobile-drag-drop/default.css');
 
                 if (isMounted) {
@@ -455,7 +456,7 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
             )}
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                <div className="flex flex-wrap items-center justify-between gap-4 w-full md:w-auto pb-2 md:pb-0">
                     <h2 className="text-xl font-bold text-gray-800 whitespace-nowrap">
                         {format(currentWeekStart, 'MMMM yyyy')}
                     </h2>
