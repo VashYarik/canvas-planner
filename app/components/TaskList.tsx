@@ -57,21 +57,27 @@ export default function TaskList({ tasks, onUpdate }: { tasks: Task[]; onUpdate:
     const renderTask = (task: Task) => (
         <div
             key={task.id}
-            className={`bg-white p-4 rounded-lg shadow-sm border-l-4 flex justify-between items-center ${task.status === 'done' ? 'border-green-400 opacity-60' : 'border-blue-500'
+            className={`p-5 rounded-2xl shadow-sm border-l-[3px] flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-all duration-200 group
+                ${task.status === 'done' 
+                    ? 'bg-bg-soft border-line-soft opacity-60' 
+                    : 'bg-card-soft border-[#d4a090] hover:shadow-md hover:-translate-y-1'
                 }`}
         >
             <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1.5">
                     {task.course ? (
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        <span 
+                            className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white px-2 py-0.5 rounded-full shadow-sm"
+                            style={{ backgroundColor: task.course.color || '#a37966' }}
+                        >
                             {task.course.code}
                         </span>
                     ) : null}
-                    <h3 className={`font-medium text-gray-900 ${task.status === 'done' ? 'line-through' : ''}`}>
+                    <h3 className={`font-lora font-medium text-lg leading-tight group-hover:text-[#a37966] transition-colors ${task.status === 'done' ? 'line-through text-muted-soft' : 'text-text-soft'}`}>
                         {task.title}
                     </h3>
                 </div>
-                <div className="text-sm text-gray-500 flex gap-4">
+                <div className="text-sm font-nunito font-medium flex flex-wrap gap-x-5 gap-y-2 mt-2">
                     {task.dueAt ? (
                         <span className={new Date(task.dueAt) < new Date() && task.status !== 'done' ? 'text-red-500 font-semibold' : ''}>
                             Due: {format(new Date(task.dueAt), 'EEE, MMM d, h:mm a')}
@@ -110,32 +116,32 @@ export default function TaskList({ tasks, onUpdate }: { tasks: Task[]; onUpdate:
                 </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 shrink-0">
                 {task.status !== 'done' && (
                     <button
                         onClick={() => handleStatusChange(task.id, 'done')}
-                        className="text-sm bg-gray-100 hover:bg-green-100 text-green-700 px-3 py-1 rounded-full transition"
+                        className="text-xs font-semibold bg-[#e8f0e8] hover:bg-[#c0d6c0] text-[#3a5a38] px-4 py-2 rounded-full transition-colors cursor-pointer"
                     >
-                        Done
+                        ✓ Done
                     </button>
                 )}
                 {task.status === 'done' && (
                     <button
                         onClick={() => handleStatusChange(task.id, 'todo')}
-                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition"
+                        className="text-xs font-semibold bg-bg-soft hover:bg-card-soft text-muted-soft border border-line-soft px-4 py-2 rounded-full transition-colors cursor-pointer"
                     >
-                        Undo
+                        ⎌ Undo
                     </button>
                 )}
                 <button
                     onClick={() => setEditingTask(task)}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition ml-2"
+                    className="text-xs font-semibold bg-transparent hover:bg-bg-soft text-text-soft border border-line-soft px-4 py-2 rounded-full transition-colors cursor-pointer"
                 >
                     Edit
                 </button>
                 <button
                     onClick={() => handleDelete(task.id)}
-                    className="text-gray-300 hover:text-red-500 ml-2"
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-muted-soft hover:bg-red-50 hover:text-red-500 transition-colors text-lg cursor-pointer"
                     title="Delete"
                 >
                     &times;
@@ -145,20 +151,20 @@ export default function TaskList({ tasks, onUpdate }: { tasks: Task[]; onUpdate:
     );
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-10">
             {schoolTasks.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">School Tasks</h3>
-                    <div className="space-y-3">
+                <div className="bg-surface-soft p-4 sm:p-6 rounded-2xl border border-line-soft shadow-sm">
+                    <h3 className="text-xl font-lora font-medium text-text-soft mb-5 border-b border-line-soft pb-3">School</h3>
+                    <div className="space-y-4">
                         {schoolTasks.map(renderTask)}
                     </div>
                 </div>
             )}
 
             {personalTasks.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">Personal Tasks</h3>
-                    <div className="space-y-3">
+                <div className="bg-surface-soft p-4 sm:p-6 rounded-2xl border border-line-soft shadow-sm">
+                    <h3 className="text-xl font-lora font-medium text-text-soft mb-5 border-b border-line-soft pb-3">Personal</h3>
+                    <div className="space-y-4">
                         {personalTasks.map(renderTask)}
                     </div>
                 </div>

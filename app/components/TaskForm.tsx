@@ -107,7 +107,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                    className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none"
                     placeholder="e.g. Math Homework"
                 />
             </div>
@@ -117,7 +117,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                 <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border min-h-[80px]"
+                    className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border min-h-[100px] transition-colors outline-none"
                     placeholder="Add notes or details..."
                 />
             </div>
@@ -129,18 +129,18 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                         type="radio"
                         checked={isSchoolTask}
                         onChange={() => setIsSchoolTask(true)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        className="h-4.5 w-4.5 text-[#a37966] border-line-soft focus:ring-[#d4a090] bg-surface-soft cursor-pointer"
                     />
-                    <span className="ml-2 text-sm text-gray-700">School Task</span>
+                    <span className="ml-2 sm:text-sm text-text-soft font-medium">School Task</span>
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center cursor-pointer">
                     <input
                         type="radio"
                         checked={!isSchoolTask}
                         onChange={() => setIsSchoolTask(false)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        className="h-4.5 w-4.5 text-[#a37966] border-line-soft focus:ring-[#d4a090] bg-surface-soft cursor-pointer"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Personal Task</span>
+                    <span className="ml-2 sm:text-sm text-text-soft font-medium">Personal Task</span>
                 </label>
             </div>
 
@@ -153,7 +153,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                             <select
                                 value={selectedCourseId}
                                 onChange={(e) => setSelectedCourseId(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
                             >
                                 {courses.map(c => (
                                     <option key={c.id} value={c.id}>
@@ -176,7 +176,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     <select
                         value={day}
                         onChange={(e) => setDay(parseInt(e.target.value))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
                     >
                         {(() => {
                             // Calculate year for display purposes
@@ -213,7 +213,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     <select
                         value={month}
                         onChange={(e) => setMonth(parseInt(e.target.value))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
                     >
                         {Array.from({ length: 12 }, (_, i) => (
                             <option key={i} value={i}>
@@ -237,7 +237,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     type="number"
                     value={estimatedMinutes}
                     onChange={(e) => setEstimatedMinutes(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                    className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none"
                     placeholder="60"
                 />
             </div>
@@ -248,7 +248,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     <select
                         value={difficulty}
                         onChange={(e) => setDifficulty(e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
                     >
                         <option value="easy">Easy</option>
                         <option value="med">Medium</option>
@@ -263,9 +263,9 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                     type="checkbox"
                     checked={needsWorkBlocks}
                     onChange={(e) => setNeedsWorkBlocks(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4.5 w-4.5 text-[#a37966] focus:ring-[#d4a090] border-line-soft bg-surface-soft rounded cursor-pointer"
                 />
-                <label htmlFor="needsWorkBlocks" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="needsWorkBlocks" className="ml-2 block sm:text-sm text-text-soft font-medium cursor-pointer">
                     Auto-schedule work blocks
                 </label>
             </div>
@@ -274,7 +274,7 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                    className="bg-[#a37966] text-white px-6 py-2.5 rounded-full hover:bg-[#8f6a5a] shadow-[0_3px_12px_rgba(163,121,102,0.3)] transition-all font-semibold cursor-pointer"
                 >
                     {loading ? 'Saving...' : 'Save Task'}
                 </button>

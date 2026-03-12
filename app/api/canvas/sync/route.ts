@@ -64,13 +64,19 @@ export async function POST() {
                     });
                 }
             } else {
+                const sourceIdStr = c.id.toString();
+                const PALETTE = ['#737883', '#86919D', '#B9BABD', '#F1F0EE', '#E8DED1', '#BE9E82'];
+                let hash = 0;
+                for (let i = 0; i < sourceIdStr.length; i++) hash = sourceIdStr.charCodeAt(i) + ((hash << 5) - hash);
+                const color = PALETTE[Math.abs(hash) % PALETTE.length];
+
                 course = await prisma.course.create({
                     data: {
                         userId: user.id,
                         name: c.name,
                         code: c.course_code,
-                        sourceId: c.id.toString(),
-                        color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+                        sourceId: sourceIdStr,
+                        color: color,
                         startDate: c.start_at ? new Date(c.start_at) : null,
                         endDate: c.end_at ? new Date(c.end_at) : null,
                     },

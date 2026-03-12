@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generatePlan } from '@/lib/planner';
+import { generatePlan, resolveScheduleConflicts } from '@/lib/planner';
 import { startOfWeek } from 'date-fns';
 import { getDbUser } from '@/lib/auth';
 
@@ -22,10 +22,16 @@ export async function POST(request: Request) {
         }
 
         const today = new Date();
-        // Start planning from today/now
-        const plan = await generatePlan(user.id, today, mode);
+        
+        if (mode === 'update') {
+            await resolveScheduleConflicts(user.id, today);
+            return NextResponse.json({ success: true, message: 'Conflicts resolved' });
+        } else {
+            // Start planning from today/now
+            const plan = await generatePlan(user.id, today, mode);
+            return NextResponse.json({ success: true, blocks: plan.length });
+        }
 
-        return NextResponse.json({ success: true, blocks: plan.length });
     } catch (error: any) {
         console.error('Plan Generation Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

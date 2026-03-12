@@ -74,13 +74,12 @@ export default async function CalendarPage() {
     }));
 
     return (
-        <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Calendar</h1>
+        <div className="h-full flex flex-col font-sans-dm text-text-gentle">
             <Calendar
                 tasks={serializableTasks}
                 workBlocks={serializableBlocks}
                 classPeriods={classPeriods}
             />
-        </div >
+        </div>
     );
 }

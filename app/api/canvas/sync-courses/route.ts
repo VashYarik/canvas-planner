@@ -36,14 +36,19 @@ export async function POST() {
             if (existing) {
                 syncedCourses.push(existing);
             } else {
+                const sourceIdStr = c.id.toString();
+                const PALETTE = ['#737883', '#86919D', '#B9BABD', '#F1F0EE', '#E8DED1', '#BE9E82'];
+                let hash = 0;
+                for (let i = 0; i < sourceIdStr.length; i++) hash = sourceIdStr.charCodeAt(i) + ((hash << 5) - hash);
+                const color = PALETTE[Math.abs(hash) % PALETTE.length];
+
                 const newCourse = await prisma.course.create({
                     data: {
                         userId: user.id,
                         name: c.name,
                         code: c.course_code,
-                        sourceId: c.id.toString(), // We added sourceId earlier to schema
-                        // Random color generator could go here
-                        color: '#' + Math.floor(Math.random() * 16777215).toString(16)
+                        sourceId: sourceIdStr,
+                        color: color
                     }
                 });
                 syncedCourses.push(newCourse);

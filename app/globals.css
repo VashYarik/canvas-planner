@@ -1,1 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Nunito:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
+
+@theme {
+  /* Soft UI Palette */
+  --color-bg-soft: #f0ebe4;
+  --color-sidebar-soft: #e8e1d8;
+  --color-surface-soft: #faf7f3;
+  --color-card-soft: #ffffff;
+  --color-line-soft: #e4ddd5;
+
+  --color-sage: #b8c9b0;
+  --color-sage-bg: #e8f0e4;
+  --color-peach: #d4a090;
+  --color-peach-bg: #f5e8e4;
+  --color-lavender: #b0a8c8;
+  --color-lav-bg: #eceaf5;
+  --color-sky: #96b8cc;
+  --color-sky-bg: #e4eef5;
+  --color-rose: #cc9aa8;
+  --color-rose-bg: #f5e8ec;
+  --color-sand: #c8b898;
+  --color-sand-bg: #f5f0e8;
+
+  --color-text-soft: #524840;
+  --color-muted-soft: #9c9088;
+  --color-accent-soft: #a07060;
+  --color-today-soft: #c4786a;
+
+  --font-lora: 'Lora', serif;
+  --font-nunito: 'Nunito', sans-serif;
+
+  /* Reference Image Palette (kept for compatibility with other components) */
+  --color-alabaster: #e6d8c8;
+  --color-mist: #e6d8c8;
+  --color-ocean: #968276;
+  --color-sunset: #b87c60;
+  --color-charcoal: #5c4e42;
+
+  --color-cream-bg: #e6d8c8;
+  --color-cream-card: #f3eae0;
+  --color-warm-border: #dcd0c4;
+  --color-warm-border: #dcd0c4;
+  --color-warm-text: #5c4e42;
+  --color-warm-muted: #95877c;
+  --color-warm-hover: #dbcec1;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(212, 160, 144, 0.4);
+  }
+  50% {
+    opacity: .8;
+    box-shadow: 0 0 25px rgba(212, 160, 144, 0.8);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

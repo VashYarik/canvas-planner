@@ -35,21 +35,29 @@ export default function ManualCourseForm({ initialData, onSuccess, onCancel }: P
     const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<CourseData>({
-        name: '',
-        code: '',
-        color: '#3B82F6',
-        startDate: '',
-        endDate: '',
-        schedule: []
+        name: initialData?.name || '',
+        code: initialData?.code || '',
+        color: initialData?.color || '#86919D',
+        startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
+        endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
+        schedule: initialData?.schedule || []
     });
 
     useEffect(() => {
         if (initialData) {
             setFormData({
                 ...initialData,
-                // Ensure dates are strings YYYY-MM-DD
                 startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
                 endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
+            });
+        } else {
+            setFormData({
+                name: '',
+                code: '',
+                color: '#86919D',
+                startDate: '',
+                endDate: '',
+                schedule: []
             });
         }
     }, [initialData]);
@@ -200,7 +208,7 @@ export default function ManualCourseForm({ initialData, onSuccess, onCancel }: P
                         <input
                             type="color"
                             className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 border"
-                            value={formData.color || '#3B82F6'}
+                            value={formData.color || '#1976D2'}
                             onChange={e => setFormData({ ...formData, color: e.target.value })}
                         />
                     </div>
@@ -264,7 +272,7 @@ export default function ManualCourseForm({ initialData, onSuccess, onCancel }: P
                                         type="button"
                                         onClick={() => toggleDay(index, day.value)}
                                         className={`w-8 h-8 rounded-full text-xs font-bold transition-colors ${period.days.includes(day.value)
-                                            ? 'bg-blue-600 text-white'
+                                            ? 'bg-ocean text-white'
                                             : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
                                             }`}
                                     >
@@ -326,7 +334,7 @@ export default function ManualCourseForm({ initialData, onSuccess, onCancel }: P
                 <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="bg-ocean text-white px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50"
                 >
                     {loading ? 'Saving...' : (initialData ? 'Update Course' : 'Create Course')}
                 </button>

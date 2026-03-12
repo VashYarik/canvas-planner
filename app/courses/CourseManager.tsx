@@ -111,7 +111,7 @@ export default function CourseManager({ initialCourses }: Props) {
         <div className="space-y-8">
             {/* Action Area */}
             {(isCreating || editingCourse) ? (
-                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <section className="bg-card-soft p-6 sm:p-8 rounded-2xl shadow-sm border border-line-soft">
                     <ManualCourseForm
                         initialData={editingCourse ? getGroupedFormData(editingCourse) : undefined}
                         onSuccess={handleSuccess}
@@ -121,8 +121,12 @@ export default function CourseManager({ initialCourses }: Props) {
             ) : (
                 <div className="flex justify-end">
                     <button
-                        onClick={() => setIsCreating(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-sm"
+                        onClick={() => {
+                            setIsCreating(true);
+                            setEditingCourse(null);
+                            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-[#a37966] text-white px-6 py-2.5 rounded-full hover:bg-[#8f6a5a] shadow-[0_3px_12px_rgba(163,121,102,0.3)] font-semibold transition-all cursor-pointer"
                     >
                         + Add New Course
                     </button>
@@ -130,61 +134,65 @@ export default function CourseManager({ initialCourses }: Props) {
             )}
 
             {/* Course List */}
-            <section className="space-y-4">
-                <h2 className="text-xl font-semibold">Your Courses</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section className="space-y-6">
+                <h2 className="text-2xl font-lora font-medium text-text-soft">Your Courses</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pb-8">
                     {initialCourses.map(course => (
                         <div
                             key={course.id}
                             onClick={() => {
                                 setEditingCourse(course);
                                 setIsCreating(false);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+                            className="bg-card-soft p-6 rounded-2xl shadow-sm border border-line-soft relative overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group"
                         >
-                            <div className="absolute top-0 left-0 w-2 h-full" style={{ backgroundColor: course.color || '#ccc' }}></div>
+                            <div className="absolute top-0 left-0 w-2 h-full opacity-80" style={{ backgroundColor: course.color || '#a37966' }}></div>
                             <div className="pl-4">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-bold text-lg group-hover:text-blue-600 transition-colors">{course.name}</h3>
-                                        <p className="text-sm text-gray-500">{course.code}</p>
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="min-w-0">
+                                        <h3 className="font-lora font-medium text-xl group-hover:text-[#a37966] transition-colors truncate">{course.name}</h3>
+                                        <p className="text-sm font-semibold text-muted-soft tracking-wider uppercase mt-1">{course.code}</p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1">
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
                                         {course.sourceId?.startsWith('manual') ? (
-                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">Manual</span>
+                                            <span className="text-[10px] font-bold tracking-wider uppercase bg-[#f5e8e4] text-[#a37966] px-2.5 py-1 rounded-full">Manual</span>
                                         ) : (
-                                            <span className="text-xs bg-blue-50 px-2 py-1 rounded text-blue-600">Canvas</span>
+                                            <span className="text-[10px] font-bold tracking-wider uppercase bg-[#e8f0e8] text-[#3a5a38] px-2.5 py-1 rounded-full">Canvas</span>
                                         )}
-                                        <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</span>
+                                        <span className="text-xs font-semibold text-muted-soft opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</span>
                                     </div>
                                 </div>
 
                                 {course.startDate && course.endDate && (
-                                    <div className="mt-2 text-xs text-gray-600">
-                                        📅 {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
+                                    <div className="mt-4 text-xs font-semibold text-text-soft flex items-center gap-2">
+                                        <span className="opacity-70">📅</span> {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
                                     </div>
                                 )}
 
-                                <div className="mt-4 space-y-1">
+                                <div className="mt-4 space-y-2">
                                     {/* Display condensed schedule */}
                                     {getGroupedFormData(course).schedule.slice(0, 3).map((p, i) => (
-                                        <div key={i} className="text-xs flex gap-2 text-gray-700">
-                                            <span className="font-medium w-8">
+                                        <div key={i} className="text-[13px] flex items-center gap-3 text-muted-soft">
+                                            <span className="font-bold text-text-soft w-10 shrink-0">
                                                 {p.days.map(d => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][d]).join('')}
                                             </span>
-                                            <span>{formatTimeAMPM(p.startTime)} - {formatTimeAMPM(p.endTime)}</span>
-                                            {p.location && <span className="text-gray-500">({p.location})</span>}
+                                            <span className="font-medium bg-bg-soft px-2 py-0.5 rounded-md border border-line-soft">
+                                                {formatTimeAMPM(p.startTime)} - {formatTimeAMPM(p.endTime)}
+                                            </span>
+                                            {p.location && <span className="italic truncate">{p.location}</span>}
                                         </div>
                                     ))}
-                                    {course.classPeriods.length === 0 && <p className="text-xs text-gray-400">No scheduled classes</p>}
-                                    {getGroupedFormData(course).schedule.length > 3 && <p className="text-xs text-gray-400">...</p>}
+                                    {course.classPeriods.length === 0 && <p className="text-sm font-medium text-muted-soft italic">No scheduled classes</p>}
+                                    {getGroupedFormData(course).schedule.length > 3 && <p className="text-sm font-bold text-muted-soft">...</p>}
                                 </div>
                             </div>
                         </div>
                     ))}
                     {initialCourses.length === 0 && (
-                        <p className="text-gray-500 italic col-span-2 text-center py-8">No courses found. Add one above!</p>
+                        <div className="col-span-1 md:col-span-2 p-12 text-center bg-card-soft rounded-2xl border-2 border-dashed border-line-soft shadow-sm">
+                            <p className="text-muted-soft text-lg font-medium">No courses found. Add one above!</p>
+                        </div>
                     )}
                 </div>
             </section>

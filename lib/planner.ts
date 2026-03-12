@@ -376,3 +376,213 @@ export async function generatePlan(userId: string, weekStart: Date, mode: 'reset
     console.log(`[Planner] Created ${workBlocksToCreate.length} blocks.`);
     return workBlocksToCreate;
 }
+
+export async function resolveScheduleConflicts(userId: string, weekStart: Date) {
+    console.log(`[Planner] Resolving schedule conflicts for user ${userId} starting ${weekStart}`);
+    
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const userTz = user?.timezone || 'America/New_York';
+    
+    // 1. Fetch all work blocks for the week
+    const weekEnd = endOfDay(addDays(weekStart, 6));
+    const rawBlocks = await prisma.workBlock.findMany({
+        where: {
+            userId,
+            startAt: { gte: weekStart, lte: weekEnd }
+        },
+        include: { task: true },
+        orderBy: { startAt: 'asc' }
+    });
+    
+    // 2. Fetch all hard constraints
+    const courses = await prisma.course.findMany({
+        where: { userId },
+        include: { classPeriods: true }
+    });
+    const classPeriods = courses.flatMap(c => c.classPeriods.map(cp => ({ ...cp, courseStart: c.startDate, courseEnd: c.endDate })));
+    
+    const availability = await prisma.availabilityBlock.findMany({
+        where: { userId }
+    });
+    
+    // Convert class periods into easily comparable intervals
+    const constraintIntervals: { start: Date, end: Date, type: 'class' | 'block', id: string }[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+        const currentDate = addDays(weekStart, i);
+        const dayIndex = getDay(currentDate);
+        
+        const dayClasses = classPeriods.filter(cp => {
+            if (cp.dayOfWeek !== dayIndex) return false;
+            if (cp.courseStart && isBefore(currentDate, startOfDay(cp.courseStart))) return false;
+            if (cp.courseEnd && isAfter(currentDate, endOfDay(cp.courseEnd))) return false;
+            return true;
+        });
+        
+        for (const cp of dayClasses) {
+            constraintIntervals.push({
+                start: createZonedDate(currentDate, cp.startTime, userTz),
+                end: createZonedDate(currentDate, cp.endTime, userTz),
+                type: 'class',
+                id: cp.id
+            });
+        }
+    }
+    
+    // 3. Process blocks
+    // We will simulate resolving conflicts in memory, then apply DB updates en masse
+    const resolvedBlocks = [...rawBlocks].map(b => ({ ...b, originalStart: new Date(b.startAt), currentStart: new Date(b.startAt), currentDuration: b.durationMinutes, isModified: false, isDeleted: false }));
+    const newBlocksToCreate: any[] = [];
+    
+    // Helper to check if an interval intersects with any constraint or any *other* resolved block
+    const getIntersections = (start: Date, duration: number, ignoreBlockId: string) => {
+        const end = addMinutes(start, duration);
+        const intersections = [];
+        
+        // Check hard constraints
+        for (const c of constraintIntervals) {
+            if (isBefore(start, c.end) && isAfter(end, c.start)) {
+                intersections.push({ ...c, isHard: true });
+            }
+        }
+        
+        // Check other blocks
+        for (const b of resolvedBlocks) {
+            if (b.id === ignoreBlockId || b.isDeleted) continue;
+            const bEnd = addMinutes(b.currentStart, b.currentDuration);
+            if (isBefore(start, bEnd) && isAfter(end, b.currentStart)) {
+                intersections.push({ start: b.currentStart, end: bEnd, type: 'block', id: b.id, isHard: false });
+            }
+        }
+        
+        return intersections;
+    };
+    
+    for (const block of resolvedBlocks) {
+        if (block.isDeleted || block.task.status === 'done' || isBefore(block.currentStart, new Date())) continue; // Skip past/done blocks
+        
+        let intersections = getIntersections(block.currentStart, block.currentDuration, block.id);
+        
+        if (intersections.length === 0) continue; // No conflict!
+        
+        console.log(`[Planner] Block ${block.id} (Task: ${block.task.title}) has ${intersections.length} intersections.`);
+        block.isModified = true;
+        
+        // We have an intersection. Let's try to nudge it on the same day first.
+        const dayStart = startOfDay(block.currentStart);
+        const dayEnd = endOfDay(block.currentStart);
+        
+        let foundSpot = false;
+        
+        // Try sliding forward in 15 min increments up to end of day
+        let tryStart = new Date(block.currentStart);
+        while (isBefore(addMinutes(tryStart, block.currentDuration), dayEnd)) {
+            tryStart = addMinutes(tryStart, 15);
+            if (getIntersections(tryStart, block.currentDuration, block.id).length === 0) {
+                block.currentStart = tryStart;
+                foundSpot = true;
+                break;
+            }
+        }
+        
+        if (!foundSpot) {
+            // Try sliding backward in 15 min increments up to start of day
+            tryStart = new Date(block.currentStart);
+            while (isAfter(tryStart, dayStart)) {
+                tryStart = addMinutes(tryStart, -15);
+                if (getIntersections(tryStart, block.currentDuration, block.id).length === 0) {
+                    block.currentStart = tryStart;
+                    foundSpot = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!foundSpot) {
+            console.log(`[Planner] Cannot nudge block ${block.id}. Must split or shrink.`);
+            // Sort intersections by start time
+            intersections.sort((a, b) => a.start.getTime() - b.start.getTime());
+            
+            // Just truncate the block to the first intersection if it's substantial, 
+            // and throw the rest into the "unplanned capacity" by not scheduling it here,
+            // or we could split it. Let's try to truncate to first intersection.
+            const firstIntersection = intersections[0];
+            const originalEnd = addMinutes(block.currentStart, block.currentDuration);
+            
+            if (isAfter(firstIntersection.start, block.currentStart)) {
+                // There is some space before the intersection
+                const possibleDuration = (firstIntersection.start.getTime() - block.currentStart.getTime()) / 60000;
+                if (possibleDuration >= 15) {
+                    block.currentDuration = possibleDuration;
+                    const remainingDuration = block.originalStart ? block.durationMinutes - possibleDuration : 0;
+                    
+                    if (remainingDuration >= 15) {
+                        // Create a new block for the remainder to be tossed somewhere else in the week
+                        // For simplicity in this conflict resolver, we will just queue it up and search forward from the end of the intersection
+                        let remainderStart = new Date(firstIntersection.end);
+                        let remainderSpot = false;
+                        while(isBefore(addMinutes(remainderStart, remainingDuration), weekEnd)) {
+                            if (getIntersections(remainderStart, remainingDuration, 'NEW').length === 0) {
+                                newBlocksToCreate.push({
+                                    taskId: block.taskId,
+                                    userId,
+                                    startAt: remainderStart,
+                                    durationMinutes: remainingDuration,
+                                    status: 'planned',
+                                    kind: 'work'
+                                });
+                                remainderSpot = true;
+                                break;
+                            }
+                            remainderStart = addMinutes(remainderStart, 15);
+                        }
+                    }
+                } else {
+                    // Space too small, just mark as deleted so we re-schedule entirely
+                    block.isDeleted = true;
+                }
+            } else {
+                 block.isDeleted = true; // Completely engulfed
+            }
+            
+            if (block.isDeleted) {
+                // Try to find a new spot for the entire duration elsewhere in the week
+               let remainderStart = new Date(firstIntersection.end);
+                while(isBefore(addMinutes(remainderStart, block.currentDuration), weekEnd)) {
+                    if (getIntersections(remainderStart, block.currentDuration, block.id).length === 0) {
+                        block.currentStart = remainderStart;
+                        block.isDeleted = false; // Revived!
+                        break;
+                    }
+                    remainderStart = addMinutes(remainderStart, 15);
+                }
+            }
+        }
+    }
+    
+    // 4. Apply DB Updates
+    const promises = [];
+    
+    for (const b of resolvedBlocks) {
+        if (b.isDeleted) {
+            promises.push(prisma.workBlock.delete({ where: { id: b.id } }));
+        } else if (b.isModified) {
+            promises.push(prisma.workBlock.update({
+                where: { id: b.id },
+                data: {
+                    startAt: b.currentStart,
+                    durationMinutes: b.currentDuration
+                }
+            }));
+        }
+    }
+    
+    if (newBlocksToCreate.length > 0) {
+        promises.push(prisma.workBlock.createMany({ data: newBlocksToCreate }));
+    }
+    
+    await Promise.all(promises);
+    console.log(`[Planner] Conflict resolution complete. Updates applied.`);
+    return true;
+}
+

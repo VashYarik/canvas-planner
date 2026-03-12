@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import TimeSelect from './TimeSelect';
+import TimeGridSelect from './TimeGridSelect';
 
 type WorkBlock = {
     id: string;
@@ -75,49 +75,53 @@ export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: P
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-                <div className="flex justify-between items-start mb-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-start mb-4 flex-shrink-0">
                     <h2 className="text-xl font-bold text-gray-800">Edit Work Block</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-4 flex-shrink-0">
                     <h3 className="font-medium text-gray-700">{block.task.title}</h3>
                 </div>
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                        <div className="flex gap-2">
+                <div className="space-y-4 overflow-y-auto pr-2 pb-2 -mr-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                             <input
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
                             />
-                            <TimeSelect
-                                value={startTime}
-                                onChange={(val) => setStartTime(val)}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (min)</label>
+                            <input
+                                type="number"
+                                value={duration}
+                                onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
                             />
                         </div>
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                        <input
-                            type="number"
-                            value={duration}
-                            onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Time (Grid)</label>
+                        <TimeGridSelect
+                            value={startTime}
+                            onChange={(val) => setStartTime(val)}
                         />
                     </div>
+                </div>
 
-                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-100">
-                        <button onClick={handleDelete} disabled={loading} className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg mr-auto">Delete</button>
-                        <button onClick={onClose} className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                        <button onClick={handleSave} disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">Save</button>
-                    </div>
+                <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-100 flex-shrink-0">
+                    <button onClick={handleDelete} disabled={loading} className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg mr-auto">Delete</button>
+                    <button onClick={onClose} className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                    <button onClick={handleSave} disabled={loading} className="px-3 py-2 bg-ocean text-white rounded-lg hover:opacity-90 disabled:opacity-50">Save</button>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

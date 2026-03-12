@@ -162,7 +162,7 @@ export default function TaskDetailsModal({ task, onClose, onUpdate, onDelete }: 
                         </div>
                         <div className="flex gap-2 justify-end mt-4">
                             <button onClick={() => setIsEditing(false)} className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                            <button onClick={handleSave} disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">Save</button>
+                            <button onClick={handleSave} disabled={loading} className="px-3 py-2 bg-ocean text-white rounded-lg hover:opacity-90 disabled:opacity-50">Save</button>
                         </div>
                     </div>
                 ) : (

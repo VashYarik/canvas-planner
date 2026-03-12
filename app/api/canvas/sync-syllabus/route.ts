@@ -21,13 +21,19 @@ export async function POST() {
             });
 
             if (!course) {
+                const sourceIdStr = String(canvasCourse.id);
+                const PALETTE = ['#737883', '#86919D', '#B9BABD', '#F1F0EE', '#E8DED1', '#BE9E82'];
+                let hash = 0;
+                for (let i = 0; i < sourceIdStr.length; i++) hash = sourceIdStr.charCodeAt(i) + ((hash << 5) - hash);
+                const color = PALETTE[Math.abs(hash) % PALETTE.length];
+
                 course = await prisma.course.create({
                     data: {
                         userId: user.id,
                         name: canvasCourse.name,
                         code: canvasCourse.course_code,
-                        sourceId: String(canvasCourse.id),
-                        color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+                        sourceId: sourceIdStr,
+                        color: color,
                         syllabus: canvasCourse.syllabus_body || null, // Store syllabus
                         startDate: canvasCourse.start_at ? new Date(canvasCourse.start_at) : null,
                         endDate: canvasCourse.end_at ? new Date(canvasCourse.end_at) : null

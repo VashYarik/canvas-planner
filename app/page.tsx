@@ -58,30 +58,34 @@ export default function DashboardPage() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-7xl mx-auto p-4 sm:p-8 space-y-8 font-nunito text-text-soft">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-          <p className="text-gray-500">Tasks due within the next 7 days.</p>
+          <h1 className="text-3xl sm:text-4xl font-lora font-medium text-text-soft mb-2 tracking-tight">Dashboard</h1>
+          <p className="text-muted-soft text-sm sm:text-base">Tasks due within the next 7 days.</p>
         </div>
         <button
           onClick={generateSchedule}
           disabled={loading}
-          className={`font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 ${loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+          className={`font-nunito font-semibold py-2.5 px-6 rounded-full transition-all flex items-center gap-2.5 shadow-sm 
+            ${loading 
+              ? 'bg-bg-soft text-muted-soft cursor-not-allowed border border-line-soft' 
+              : 'bg-[#a37966] text-white hover:bg-[#8f6a5a] cursor-pointer shadow-[0_3px_12px_rgba(163,121,102,0.3)]'
+            }`}
         >
-          <span>{loading ? '⏳' : '✨'}</span>
+          <span className="text-lg leading-none">{loading ? '⏳' : '✨'}</span>
           {loading ? 'Generating...' : 'Generate Schedule'}
         </button>
       </div>
 
       {loading ? (
-        <div>Loading dashboard...</div>
+        <div className="text-muted-soft text-center py-12 animate-pulse font-medium">Loading dashboard...</div>
       ) : tasks.length === 0 ? (
-        <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <p className="text-gray-500">No tasks due this week! 🎉</p>
+        <div className="p-12 text-center bg-card-soft rounded-2xl border-2 border-dashed border-line-soft shadow-sm">
+          <p className="text-muted-soft text-lg font-medium">No tasks due this week! 🎉</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
           {tasks.map(task => (
             <DashboardCard key={task.id} task={task} />
           ))}
