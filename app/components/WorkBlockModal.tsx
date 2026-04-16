@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import TimeGridSelect from './TimeGridSelect';
 
 type WorkBlock = {
     id: string;
@@ -72,54 +71,60 @@ export default function WorkBlockModal({ block, onClose, onUpdate, onDelete }: P
             setLoading(false);
         }
     };
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] flex flex-col">
-                <div className="flex justify-between items-start mb-4 flex-shrink-0">
-                    <h2 className="text-xl font-bold text-gray-800">Edit Work Block</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 font-nunito">
+            <div className="absolute inset-0 bg-[#2b2523]/40 backdrop-blur-sm" onClick={onClose} />
+
+            <div className="relative w-full max-w-sm bg-surface-soft border border-line-soft rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                <div className="px-5 pt-5 pb-4 border-b border-line-soft relative flex-shrink-0">
+                    <button onClick={onClose} className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-bg-soft text-muted-soft hover:bg-card-soft transition-colors cursor-pointer text-lg">&times;</button>
+
+                    <h2 className="text-xl font-bold text-text-soft leading-tight tracking-tight pr-8">Edit Work Block</h2>
+                    <div className="text-muted-soft text-sm mt-1.5 font-medium line-clamp-1">
+                        {block.task.title}
+                    </div>
                 </div>
 
-                <div className="mb-4 flex-shrink-0">
-                    <h3 className="font-medium text-gray-700">{block.task.title}</h3>
-                </div>
-
-                <div className="space-y-4 overflow-y-auto pr-2 pb-2 -mr-2">
+                <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] custom-scrollbar">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <label className="block text-xs font-bold text-muted-soft uppercase tracking-wider mb-1.5">Date</label>
                             <input
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                                className="block w-full rounded-xl border border-line-soft bg-bg-soft text-text-soft focus:border-[#a37966] focus:ring-1 focus:ring-[#a37966] p-2.5 text-sm transition-colors outline-none cursor-pointer"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (min)</label>
+                            <label className="block text-xs font-bold text-muted-soft uppercase tracking-wider mb-1.5">Time</label>
                             <input
-                                type="number"
-                                value={duration}
-                                onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                                type="time"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                className="block w-full rounded-xl border border-line-soft bg-bg-soft text-text-soft focus:border-[#a37966] focus:ring-1 focus:ring-[#a37966] p-2.5 text-sm transition-colors outline-none cursor-pointer"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Time (Grid)</label>
-                        <TimeGridSelect
-                            value={startTime}
-                            onChange={(val) => setStartTime(val)}
+                        <label className="block text-xs font-bold text-muted-soft uppercase tracking-wider mb-1.5">Duration (min)</label>
+                        <input
+                            type="number"
+                            min="1"
+                            value={duration}
+                            onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value))}
+                            className="block w-full rounded-xl border border-line-soft bg-bg-soft text-text-soft focus:border-[#a37966] focus:ring-1 focus:ring-[#a37966] p-2.5 text-sm transition-colors outline-none"
                         />
                     </div>
                 </div>
 
-                <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-100 flex-shrink-0">
-                    <button onClick={handleDelete} disabled={loading} className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg mr-auto">Delete</button>
-                    <button onClick={onClose} className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                    <button onClick={handleSave} disabled={loading} className="px-3 py-2 bg-ocean text-white rounded-lg hover:opacity-90 disabled:opacity-50">Save</button>
+                <div className="p-4 border-t border-line-soft flex items-center justify-between bg-surface-soft flex-shrink-0">
+                    <button onClick={handleDelete} disabled={loading} className="px-4 py-2 text-red-500 hover:bg-red-500/10 font-semibold rounded-xl text-sm transition-colors">Delete</button>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="px-4 py-2 text-muted-soft hover:bg-bg-soft font-semibold rounded-xl text-sm transition-colors">Cancel</button>
+                        <button onClick={handleSave} disabled={loading} className="px-5 py-2 bg-[#a37966] text-white font-semibold rounded-xl text-sm hover:bg-[#8f6a5a] shadow-sm disabled:opacity-50 transition-colors">Save</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -18,12 +18,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="h-screen overflow-hidden bg-surface-soft flex flex-col md:flex-row">
             {/* Mobile Header */}
             <header className="md:hidden flex items-center justify-between px-6 py-4 bg-sidebar-soft border-b border-line-soft flex-shrink-0 z-30 relative">
-                <h1 className="font-lora text-xl font-bold text-text-soft">Planner</h1>
-                <div className="flex items-center gap-4">
-                    <UserButton />
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 text-text-soft hover:bg-bg-soft rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-soft"
+                        className="p-1 -ml-1 text-text-soft hover:bg-bg-soft rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-soft"
                         aria-label="Toggle sidebar"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,6 +32,10 @@ export default function Layout({ children }: { children: ReactNode }) {
                             )}
                         </svg>
                     </button>
+                    <h1 className="font-lora text-xl font-bold text-text-soft">Planner</h1>
+                </div>
+                <div className="flex items-center">
+                    <UserButton />
                 </div>
             </header>
 
@@ -65,21 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     <UserButton />
                 </div>
                 <div className="pt-4 mt-auto">
-                    <p className="text-xs text-muted-soft">MVP v0.1.0</p>
-                    <div className="mt-4 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#ccaa99] text-white flex items-center justify-center font-bold text-sm">N</div>
-                        <div className="text-[10px] text-muted-soft leading-tight flex flex-col">
-                            <span className="font-bold text-text-soft text-xs">Yaroslav</span>
-                            <a
-                                href="https://github.com/VashYarik"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-accent-soft transition-colors"
-                            >
-                                github.com/VashYarik
-                            </a>
-                        </div>
-                    </div>
+                    <p className="text-xs text-muted-soft">MVP v0.1.1</p>
                 </div>
             </aside>
 

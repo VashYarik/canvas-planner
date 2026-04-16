@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays, isSameDay, parseISO, setHours, setMinutes, isAfter, addMinutes } from 'date-fns';
 import TaskDetailsModal from './TaskDetailsModal';
 import WorkBlockModal from './WorkBlockModal';
+import ClassPeriodModal from './ClassPeriodModal';
 
 type WorkBlock = {
     id: string;
@@ -108,6 +109,7 @@ type ClassPeriod = {
     endTime: string; // "HH:MM"
     location: string | null;
     course: { id: string; name: string; code: string; color: string | null };
+    exceptions?: { id: string, date: string, exceptionType: string }[];
 };
 
 export default function Calendar({ tasks: initialTasks, workBlocks: initialBlocks, classPeriods = [] }: { tasks: Task[], workBlocks: WorkBlock[], classPeriods?: ClassPeriod[] }) {
@@ -124,6 +126,7 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
 
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [selectedBlock, setSelectedBlock] = useState<WorkBlock | null>(null);
+    const [selectedClassPeriod, setSelectedClassPeriod] = useState<{ period: ClassPeriod; date: Date; isCanceled: boolean } | null>(null);
 
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
@@ -337,11 +340,6 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
         const blockToUpdate = workBlocks.find(b => b.id === blockId);
         if (!blockToUpdate) return;
 
-        if (blockToUpdate.task.dueAt && isAfter(newStart, parseISO(blockToUpdate.task.dueAt))) {
-            const confirmed = window.confirm(`Warning: You are moving this workblock past the task's due date (${format(parseISO(blockToUpdate.task.dueAt), 'MMM d, h:mm a')}).\n\nAre you sure you want to disregard the deadline and keep it here?`);
-            if (!confirmed) return;
-        }
-
         if (isDuplicate) {
             try {
                 const res = await fetch(`/api/blocks`, {
@@ -406,13 +404,6 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
     const handleEdgeDragOver = (e: React.DragEvent, weeksOffset: number) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = e.altKey || e.ctrlKey ? 'copy' : 'move';
-
-        if (!dragTimerRef.current) {
-            dragTimerRef.current = setTimeout(() => {
-                setCurrentWeekStart(prev => startOfWeek(addDays(prev, 7 * weeksOffset), { weekStartsOn: 1 }));
-                dragTimerRef.current = null; // Reset to allow continuous scrolling if they keep holding it
-            }, 700); // 700ms hover delay
-        }
     };
 
     const handleEdgeDragLeave = () => {
@@ -654,6 +645,14 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                     onDelete={handleBlockDelete}
                 />
             )}
+            {selectedClassPeriod && (
+                <ClassPeriodModal
+                    period={selectedClassPeriod.period}
+                    date={selectedClassPeriod.date}
+                    isCanceled={selectedClassPeriod.isCanceled}
+                    onClose={() => setSelectedClassPeriod(null)}
+                />
+            )}
 
             {/* TOOLBAR */}
             <div className="flex items-center gap-2.5 px-4 sm:px-7 py-3.5 sm:py-4.5 border-b border-line-soft shrink-0 flex-wrap bg-surface-soft z-10 transition-colors">
@@ -667,52 +666,53 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 lg:gap-3 flex-1">
-                    <button onClick={() => setShowCourses(!showCourses)} className={`px-3 sm:px-4 py-1.5 rounded-full border border-line-soft font-nunito text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${showCourses ? 'bg-surface-soft text-text-soft' : 'bg-transparent text-muted-soft line-through opacity-60'}`}>Courses</button>
-                    <button onClick={() => setShowTasks(!showTasks)} className={`px-3 sm:px-4 py-1.5 rounded-full border border-line-soft font-nunito text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${showTasks ? 'bg-surface-soft text-text-soft' : 'bg-transparent text-muted-soft line-through opacity-60'}`}>Tasks</button>
-
-                    <div className="hidden md:flex items-center bg-transparent border border-line-soft rounded-full overflow-hidden ml-auto">
+                    <div className="flex items-center bg-transparent border border-line-soft rounded-full overflow-hidden ml-auto">
                         <button onClick={() => setZoomLevel(Math.max(40, zoomLevel - 20))} className="px-3.5 py-1.5 bg-transparent border-none text-xs font-semibold text-muted-soft hover:text-text-soft hover:bg-card-soft transition-colors cursor-pointer">− Zoom</button>
                         <span className="text-[10px] text-line-soft opacity-60">|</span>
                         <button onClick={() => setZoomLevel(Math.min(200, zoomLevel + 20))} className="px-3.5 py-1.5 bg-transparent border-none text-xs font-semibold text-muted-soft hover:text-text-soft hover:bg-card-soft transition-colors cursor-pointer">Zoom +</button>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 justify-end sm:ml-auto md:ml-2">
-                        <button 
-                            disabled={selectionMode} 
-                            onClick={async (e) => {
-                                const btn = e.currentTarget;
-                                const originalText = btn.innerHTML;
-                                btn.innerHTML = '↻ Updating...';
-                                btn.disabled = true;
-                                try {
-                                    const res = await fetch('/api/plan/generate', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ mode: 'update' })
-                                    });
-                                    if (!res.ok) throw new Error('Failed to update schedule');
-                                    router.refresh();
-                                } catch (error) {
-                                    alert('Error updating schedule');
-                                } finally {
-                                    btn.innerHTML = originalText;
-                                    btn.disabled = false;
-                                }
-                            }} 
-                            className={`px-3 sm:px-4 py-1.5 rounded-full border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors ${selectionMode ? 'bg-bg-soft text-muted-soft opacity-50 cursor-not-allowed' : 'bg-[#a37966] text-white shadow-[0_3px_12px_rgba(163,121,102,0.3)] hover:bg-[#8f6a5a] cursor-pointer'}`}
-                        >
-                            ↻ Update Schedule
-                        </button>
                         <div className="relative">
                             <button
                                 onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
-                                className={`px-3 sm:px-4 py-1.5 rounded-full font-nunito text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${isActionsMenuOpen ? 'bg-card-soft text-text-soft border border-line-soft' : 'bg-transparent text-text-soft border border-line-soft hover:bg-card-soft'}`}
+                                className={`px-4 py-1.5 rounded-full font-nunito text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${isActionsMenuOpen ? 'bg-card-soft text-text-soft border border-line-soft' : 'bg-[#a37966] text-white hover:bg-[#8f6a5a] border border-transparent shadow-[0_3px_12px_rgba(163,121,102,0.3)]'}`}
                             >
-                                ⋮ Actions
+                                ⋮ Menu Actions
                             </button>
 
                             {isActionsMenuOpen && (
                                 <div className="absolute right-0 top-full mt-2 w-48 bg-surface-soft border border-line-soft rounded-xl shadow-lg z-[60] py-1 flex flex-col gap-1">
+                                    {!selectionMode && (
+                                        <button 
+                                            disabled={selectionMode} 
+                                            onClick={async (e) => {
+                                                const btn = e.currentTarget;
+                                                const originalText = btn.innerHTML;
+                                                btn.innerHTML = '↻ Building...';
+                                                btn.disabled = true;
+                                                try {
+                                                    const res = await fetch('/api/plan/generate', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ mode: 'update' })
+                                                    });
+                                                    if (!res.ok) throw new Error('Failed to update schedule');
+                                                    router.refresh();
+                                                } catch (error) {
+                                                    alert('Error updating schedule');
+                                                } finally {
+                                                    btn.innerHTML = originalText;
+                                                    btn.disabled = false;
+                                                    setIsActionsMenuOpen(false);
+                                                }
+                                            }} 
+                                            className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-[#a37966] hover:bg-[#f5e8e4] cursor-pointer border-b border-line-soft rounded-none"
+                                        >
+                                            ↻ Auto-Schedule
+                                        </button>
+                                    )}
+
                                     <button
                                         onClick={() => {
                                             setSelectionMode(!selectionMode);
@@ -735,71 +735,79 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                     )}
 
                                     {!selectionMode && (
-                                        <div className="relative">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setIsAddingBlock(!isAddingBlock);
-                                                }} 
-                                                className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-text-soft hover:bg-bg-soft cursor-pointer"
-                                            >
-                                                ＋ Add Block
-                                            </button>
-                                            
-                                            {isAddingBlock && (
-                                                <div className="absolute right-full top-0 mr-2 w-64 bg-card-soft border border-line-soft rounded-xl shadow-md z-[60] max-h-64 overflow-y-auto p-1">
-                                                    <div className="text-[10px] font-bold text-muted-soft uppercase tracking-wider mb-1 pl-2 pt-1 flex justify-between items-center pr-2">
-                                                        <span>Select a Task</span>
-                                                        <button onClick={(e) => { e.stopPropagation(); setIsAddingBlock(false); }} className="text-muted-soft hover:text-text-soft text-sm leading-none">&times;</button>
+                                        <>
+                                            <div className="relative">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsAddingBlock(!isAddingBlock);
+                                                    }} 
+                                                    className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-text-soft hover:bg-bg-soft cursor-pointer"
+                                                >
+                                                    ＋ Add Block
+                                                </button>
+                                                
+                                                {isAddingBlock && (
+                                                    <div className="absolute right-full top-0 mr-2 w-64 bg-card-soft border border-line-soft rounded-xl shadow-md z-[60] max-h-64 overflow-y-auto p-1">
+                                                        <div className="text-[10px] font-bold text-muted-soft uppercase tracking-wider mb-1 pl-2 pt-1 flex justify-between items-center pr-2">
+                                                            <span>Select a Task</span>
+                                                            <button onClick={(e) => { e.stopPropagation(); setIsAddingBlock(false); }} className="text-muted-soft hover:text-text-soft text-sm leading-none">&times;</button>
+                                                        </div>
+                                                        {tasks.filter(t => t.status !== 'done').length === 0 ? (
+                                                            <div className="p-3 text-xs text-muted-soft text-center">No active tasks</div>
+                                                        ) : (
+                                                            tasks.filter(t => t.status !== 'done').map(task => (
+                                                                <button
+                                                                    key={task.id}
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        setIsAddingBlock(false);
+                                                                        setIsActionsMenuOpen(false);
+                                                                        try {
+                                                                            const defaultDate = new Date();
+                                                                            defaultDate.setDate(defaultDate.getDate() + 1);
+                                                                            defaultDate.setHours(9, 0, 0, 0);
+                                                                            const newTaskRes = await fetch('/api/blocks', {
+                                                                                method: 'POST',
+                                                                                headers: { 'Content-Type': 'application/json' },
+                                                                                body: JSON.stringify({ taskId: task.id, startAt: defaultDate.toISOString(), durationMinutes: 60 })
+                                                                            });
+                                                                            if (!newTaskRes.ok) throw new Error('Failed');
+                                                                            const createdBlock = await newTaskRes.json();
+                                                                            setCurrentWeekStart(startOfWeek(defaultDate, { weekStartsOn: 1 }));
+                                                                            setNewlyAddedBlockId(createdBlock.id);
+                                                                            setTimeout(() => setNewlyAddedBlockId(null), 3000);
+                                                                            router.refresh();
+                                                                        } catch (error) { alert('Failed to add work block'); }
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs hover:bg-bg-soft text-text-soft rounded-lg transition-colors truncate mb-0.5 cursor-pointer"
+                                                                >
+                                                                    {task.title}
+                                                                </button>
+                                                            ))
+                                                        )}
                                                     </div>
-                                                    {tasks.filter(t => t.status !== 'done').length === 0 ? (
-                                                        <div className="p-3 text-xs text-muted-soft text-center">No active tasks</div>
-                                                    ) : (
-                                                        tasks.filter(t => t.status !== 'done').map(task => (
-                                                            <button
-                                                                key={task.id}
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    setIsAddingBlock(false);
-                                                                    setIsActionsMenuOpen(false);
-                                                                    try {
-                                                                        const defaultDate = new Date();
-                                                                        defaultDate.setDate(defaultDate.getDate() + 1);
-                                                                        defaultDate.setHours(9, 0, 0, 0);
-                                                                        const newTaskRes = await fetch('/api/blocks', {
-                                                                            method: 'POST',
-                                                                            headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ taskId: task.id, startAt: defaultDate.toISOString(), durationMinutes: 60 })
-                                                                        });
-                                                                        if (!newTaskRes.ok) throw new Error('Failed');
-                                                                        const createdBlock = await newTaskRes.json();
-                                                                        setCurrentWeekStart(startOfWeek(defaultDate, { weekStartsOn: 1 }));
-                                                                        setNewlyAddedBlockId(createdBlock.id);
-                                                                        setTimeout(() => setNewlyAddedBlockId(null), 3000);
-                                                                        router.refresh();
-                                                                    } catch (error) { alert('Failed to add work block'); }
-                                                                }}
-                                                                className="w-full text-left px-3 py-2 text-xs hover:bg-bg-soft text-text-soft rounded-lg transition-colors truncate mb-0.5 cursor-pointer"
-                                                            >
-                                                                {task.title}
-                                                            </button>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                )}
+                                            </div>
 
-                                    {!selectionMode && (
-                                        <button onClick={async () => {
-                                            setIsActionsMenuOpen(false);
-                                            if (confirm('Clear ALL items from the calendar?\n\nThis will remove the schedule but keep Courses & Tasks.')) {
-                                                await fetch('/api/plan', { method: 'DELETE' });
-                                                window.location.reload();
-                                            }
-                                        }} className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-[#a37966] hover:bg-[#f5e8e4] cursor-pointer">
-                                            ✕ Clear All
-                                        </button>
+                                            <button onClick={() => setShowCourses(!showCourses)} className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-text-soft hover:bg-bg-soft cursor-pointer">
+                                                {showCourses ? '👁 Hide Courses' : '👁 Show Courses'}
+                                            </button>
+
+                                            <button onClick={() => setShowTasks(!showTasks)} className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-text-soft hover:bg-bg-soft cursor-pointer">
+                                                {showTasks ? '👁 Hide Tasks' : '👁 Show Tasks'}
+                                            </button>
+
+                                            <button onClick={async () => {
+                                                setIsActionsMenuOpen(false);
+                                                if (confirm('Clear ALL items from the calendar?\n\nThis will remove the schedule but keep Courses & Tasks.')) {
+                                                    await fetch('/api/plan', { method: 'DELETE' });
+                                                    window.location.reload();
+                                                }
+                                            }} className="w-full text-left px-4 py-2 border-none font-nunito text-xs font-semibold whitespace-nowrap transition-colors bg-transparent text-red-500 hover:bg-red-50 cursor-pointer border-t border-line-soft rounded-none mt-1">
+                                                ✕ Clear Grid
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -808,35 +816,37 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                 </div>
             </div>
 
-            {/* Drop Zones */}
-            {isDragging && (
-                <>
-                    <div className="absolute top-0 left-0 w-12 h-full bg-sky-bg/80 z-20 flex items-center justify-center border-r-2 border-sky transition-all" onDragOver={(e) => handleEdgeDragOver(e, -1)} onDragLeave={handleEdgeDragLeave} onDrop={(e) => handleWeekDrop(e, -1)}></div>
-                    <div className="absolute top-0 right-0 w-12 h-full bg-sky-bg/80 z-20 flex items-center justify-center border-l-2 border-sky transition-all" onDragOver={(e) => handleEdgeDragOver(e, 1)} onDragLeave={handleEdgeDragLeave} onDrop={(e) => handleWeekDrop(e, 1)}></div>
-                </>
-            )}
+            {/* VIEWPORT WRAPPER */}
+            <div className="flex-1 relative overflow-hidden flex flex-col">
+                {/* Drop Zones */}
+                {isDragging && (
+                    <>
+                        <div className="absolute top-0 left-0 w-12 h-full bg-sky-bg/80 z-20 flex items-center justify-center border-r-2 border-sky transition-all" onDragOver={(e) => handleEdgeDragOver(e, -1)} onDragLeave={handleEdgeDragLeave} onDrop={(e) => handleWeekDrop(e, -1)}></div>
+                        <div className="absolute top-0 right-0 w-12 h-full bg-sky-bg/80 z-20 flex items-center justify-center border-l-2 border-sky transition-all" onDragOver={(e) => handleEdgeDragOver(e, 1)} onDragLeave={handleEdgeDragLeave} onDrop={(e) => handleWeekDrop(e, 1)}></div>
+                    </>
+                )}
 
-            {/* CALENDAR AREA */}
-            <div className="flex-1 overflow-auto px-4 sm:px-7 pb-5 format-scroll relative">
-                
-                {/* WEEK HEADER */}
-                <div className="grid sticky top-0 bg-surface-soft z-[5] pt-3.5 pb-2 border-b border-line-soft gap-1" style={{ gridTemplateColumns: `54px ${gridTemplateColumns}` }}>
-                    <div className=""></div>
-                    {days.map((day, i) => {
-                        const isCurrent = isSameDay(day, new Date());
-                        return (
-                            <div key={day.toISOString()} className="text-center py-1.5 px-1">
-                                <div className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-muted-soft">{format(day, 'EEE')}</div>
-                                <div className={`mt-0.5 w-9 h-9 mx-auto flex items-center justify-center rounded-full text-xl font-medium transition-colors ${isCurrent ? 'bg-[#a37966] text-white shadow-md' : 'text-text-soft'}`}>
-                                    {format(day, 'd')}
+                {/* CALENDAR AREA */}
+                <div className="flex-1 overflow-auto px-4 sm:px-7 pb-5 format-scroll relative">
+                <div className="min-w-[650px] lg:min-w-0">
+                    {/* WEEK HEADER */}
+                    <div className="grid sticky top-0 bg-surface-soft z-[5] pt-3.5 pb-2 border-b border-line-soft gap-1" style={{ gridTemplateColumns: `54px ${gridTemplateColumns}` }}>
+                        <div className=""></div>
+                        {days.map((day, i) => {
+                            const isCurrent = isSameDay(day, new Date());
+                            return (
+                                <div key={day.toISOString()} className="text-center py-1.5 px-1">
+                                    <div className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-muted-soft">{format(day, 'EEE')}</div>
+                                    <div className={`mt-0.5 w-9 h-9 mx-auto flex items-center justify-center rounded-full text-xl font-medium transition-colors ${isCurrent ? 'bg-[#a37966] text-white shadow-md' : 'text-text-soft'}`}>
+                                        {format(day, 'd')}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })}
+                    </div>
 
-                {/* TIME GRID */}
-                <div className="grid gap-1 relative mt-4" style={{ gridTemplateColumns: `54px ${gridTemplateColumns}`, height: `${gridHeight}px` }}>
+                    {/* TIME GRID */}
+                    <div className="grid gap-1 relative mt-4" style={{ gridTemplateColumns: `54px ${gridTemplateColumns}`, height: `${gridHeight}px` }}>
                     
                     {/* Time labels column */}
                     <div className="flex flex-col relative z-[2] border-r border-transparent" style={{ height: `${gridHeight}px` }}>
@@ -920,7 +930,15 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                          height: `${Math.max(28, draggedBlock.durationMinutes * PIXELS_PER_MINUTE)}px`
                                      }}>
                                      <div className="text-[10px] text-[#2a5070] font-bold opacity-70 mb-0.5 tracking-tight">
-                                        {format(setMinutes(setHours(new Date(), Math.floor((dragPreviewY / PIXELS_PER_MINUTE) + minHour)), Math.round(dragPreviewY / PIXELS_PER_MINUTE) % 60), 'h:mm a')}
+                                        {(() => {
+                                            const previewMins = Math.round(dragPreviewY / PIXELS_PER_MINUTE);
+                                            const totalMins = minHour * 60 + previewMins;
+                                            const h = Math.floor(totalMins / 60);
+                                            const m = totalMins % 60;
+                                            const d = new Date();
+                                            d.setHours(h, m, 0, 0);
+                                            return format(d, 'h:mm a');
+                                        })()}
                                      </div>
                                      <div className="text-xs text-[#2a5070] font-semibold line-clamp-1">{draggedBlock.task.title}</div>
                                 </div>
@@ -999,8 +1017,8 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                     columns.forEach((col, colIndex) => {
                                         col.forEach(item => {
                                             itemStyles.set(item, {
-                                                left: `calc(${(colIndex / numCols) * 100}% + 1px)`,
-                                                width: `calc(${100 / numCols}% - 2px)`,
+                                                left: `calc(${(colIndex / numCols) * 100}% + 3px)`,
+                                                width: `calc(${100 / numCols}% - 6px)`,
                                                 zIndexOffset: colIndex
                                             });
                                         });
@@ -1039,12 +1057,15 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                         const [eh, em] = period.endTime.split(':');
                                         const [sh, sm] = period.startTime.split(':');
                                         const durationMins = (parseInt(eh)*60 + parseInt(em)) - (parseInt(sh)*60 + parseInt(sm));
-                                        let pxHeight = Math.max(28, durationMins * PIXELS_PER_MINUTE);
+                                        let pxHeight = Math.max(28, durationMins * PIXELS_PER_MINUTE) - 3;
 
                                         const isPast = (() => {
                                             const endDate = new Date(day); endDate.setHours(parseInt(eh), parseInt(em), 0, 0);
                                             return currentTime > endDate;
                                         })();
+                                        
+                                        const dateStr = format(day, 'yyyy-MM-dd');
+                                        const isCanceled = period.exceptions?.some(e => e.date === dateStr) || false;
                                         
                                         const isCurrent = (() => {
                                             const startDate = new Date(day); startDate.setHours(parseInt(sh), parseInt(sm), 0, 0);
@@ -1053,24 +1074,31 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                         })();
 
                                         const styleObj = period.course.color ? {
-                                            bg: period.course.color + (isPast ? '60' : ''), // solid if active, transparent if past
-                                            color: isPast ? '#524840' : '#ffffff',
+                                            bg: period.course.color + (isPast || isCanceled ? '60' : ''), // solid if active, transparent if past or canceled
+                                            color: isPast || isCanceled ? '#524840' : '#ffffff',
                                             border: period.course.color
                                         } : getHashColor(period.id);
 
                                         return (
                                             <div
                                                 key={`period-${period.id}-${index}`}
-                                                className={`absolute px-1.5 py-1.5 rounded-lg cursor-pointer text-[10px] sm:text-[11px] transition-transform duration-150 overflow-hidden ${selectionMode ? 'hover:scale-100 ring-1 ring-red-300' : 'hover:-translate-y-px z-[2] hover:z-[10]'} ${isSelected ? 'ring-2 ring-red-500 opacity-100' : ''} ${isPast ? 'opacity-[0.6]' : 'shadow-sm'} ${isCurrent ? 'ring-2 ring-offset-1 ring-[#d4a090] shadow-[0_0_15px_rgba(212,160,144,0.6)] z-[5] animate-pulse-slow' : ''}`}
+                                                className={`absolute px-1.5 py-1.5 rounded-lg cursor-pointer text-[10px] sm:text-[11px] transition-transform duration-150 overflow-hidden ${selectionMode ? 'hover:scale-100 ring-1 ring-red-300' : 'hover:-translate-y-px z-[2] hover:z-[10]'} ${isSelected ? 'ring-2 ring-red-500 opacity-100' : ''} ${isPast || isCanceled ? 'opacity-[0.6]' : 'shadow-sm'} ${isCurrent && !isCanceled ? 'ring-2 ring-offset-1 ring-[#d4a090] shadow-[0_0_15px_rgba(212,160,144,0.6)] z-[5] animate-pulse-slow' : ''}`}
                                                 style={{
                                                     top: `${itemY}px`, height: `${pxHeight}px`,
                                                     left: itemStyles.get(item)?.left || '1px', width: itemStyles.get(item)?.width || 'calc(100% - 2px)',
-                                                    backgroundColor: isPast ? Math.abs(getHashColor(period.id).bg.indexOf('var')) > -1 ? getHashColor(period.id).bg : styleObj.bg : styleObj.border, 
-                                                    borderLeft: `3px solid ${isPast ? styleObj.border : 'rgba(255,255,255,0.4)'}`, 
-                                                    color: isPast ? styleObj.color : '#ffffff',
+                                                    backgroundColor: isPast || isCanceled ? Math.abs(getHashColor(period.id).bg.indexOf('var')) > -1 ? getHashColor(period.id).bg : styleObj.bg : styleObj.border, 
+                                                    borderLeft: `3px solid ${isPast || isCanceled ? styleObj.border : 'rgba(255,255,255,0.4)'}`, 
+                                                    color: isPast || isCanceled ? styleObj.color : '#ffffff',
                                                     opacity: selectionMode && !isSelected && selectedCourseIds.size > 0 ? 0.4 : undefined
                                                 }}
-                                                onClick={() => { if(selectionMode) toggleSelection(period.course.id, 'course'); else router.push(`/courses?edit=${period.course.id}`); }}
+                                                onClick={(e) => { 
+                                                    e.stopPropagation();
+                                                    if(selectionMode) {
+                                                        toggleSelection(period.course.id, 'course'); 
+                                                    } else {
+                                                        setSelectedClassPeriod({ period, date: new Date(day), isCanceled });
+                                                    }
+                                                }}
                                             >
                                                 <div className="flex justify-between items-start">
                                                     <div className="font-medium opacity-70 mb-0.5 text-[8.5px] sm:text-[9px] tracking-tight">{formatTime(period.startTime)}</div>
@@ -1078,7 +1106,10 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                                         <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${isSelected ? 'bg-red-500 border-red-500 text-white' : 'border-red-300 bg-white/50'}`}>{isSelected && '✓'}</div>
                                                     )}
                                                 </div>
-                                                <div className={`font-medium text-[10.5px] leading-[1.2] line-clamp-2 ${isPast ? 'line-through' : ''}`}>{period.course.code ? `${period.course.code} - ${period.course.name}` : period.course.name}</div>
+                                                <div className={`font-medium text-[10.5px] leading-[1.2] line-clamp-2 ${isCanceled ? 'line-through opacity-70' : ''}`}>
+                                                    {isCanceled && <span className="font-bold text-red-700 mr-1 uppercase text-[8.5px]">Canceled</span>}
+                                                    {period.course.code ? `${period.course.code} - ${period.course.name}` : period.course.name}
+                                                </div>
                                             </div>
                                         );
                                     } else if (item.type === 'block') {
@@ -1086,12 +1117,12 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                         const styleObj = getHashColor(wb.task.id);
                                         const isSelected = selectedBlockIds.has(wb.id);
                                         const displayDuration = resizingBlockId === wb.id && resizingDuration !== null ? resizingDuration : wb.durationMinutes;
-                                        let height = Math.max(28, displayDuration * PIXELS_PER_MINUTE);
+                                        let height = Math.max(28, displayDuration * PIXELS_PER_MINUTE) - 3;
                                         const sameBlocks = workBlocks.filter(b => b.task.id === wb.task.id).sort((a,b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
                                         const isMulti = sameBlocks.length > 1;
                                         const partNum = isMulti ? sameBlocks.findIndex(b => b.id === wb.id) + 1 : 0;
                                         const isPast = currentTime > addMinutes(parseISO(wb.startAt), wb.durationMinutes);
-                                        const isDone = wb.task.status === 'done' || isPast;
+                                        const isDone = wb.task.status === 'done';
                                         
                                         const isCurrent = (() => {
                                             const startDate = parseISO(wb.startAt);
@@ -1105,7 +1136,7 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                                 draggable={!selectionMode && !resizingBlockId}
                                                 onDragStart={(e) => handleDragStart(e, wb)}
                                                 onDragEnd={handleDragEnd}
-                                                className={`absolute px-1.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] transition-transform duration-150 overflow-hidden ${selectionMode ? 'cursor-pointer hover:scale-100 ring-1 ring-blue-300' : 'cursor-grab active:cursor-grabbing hover:-translate-y-px z-[2] hover:z-[10]'} ${isSelected ? 'ring-2 ring-blue-500 opacity-100' : ''} ${isDone ? 'opacity-[0.6]' : 'shadow-sm'} ${isCurrent ? 'ring-2 ring-offset-1 ring-[#d4a090] shadow-[0_0_15px_rgba(212,160,144,0.6)] z-[5] animate-pulse-slow' : ''}`}
+                                                className={`touch-none absolute px-1.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] transition-transform duration-150 overflow-hidden ${selectionMode ? 'cursor-pointer hover:scale-100 ring-1 ring-blue-300' : 'cursor-grab active:cursor-grabbing hover:-translate-y-px z-[2] hover:z-[10]'} ${isSelected ? 'ring-2 ring-blue-500 opacity-100' : ''} ${isDone ? 'opacity-[0.6]' : 'shadow-sm'} ${isCurrent ? 'ring-2 ring-offset-1 ring-[#d4a090] shadow-[0_0_15px_rgba(212,160,144,0.6)] z-[5] animate-pulse-slow' : ''}`}
                                                 style={{
                                                     top: `${itemY}px`, height: `${height}px`,
                                                     left: itemStyles.get(item)?.left || '1px', width: itemStyles.get(item)?.width || 'calc(100% - 2px)',
@@ -1141,8 +1172,8 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                         
                                         if (!t.needsWorkBlocks && t.estimatedMinutes) {
                                             const displayDuration = t.estimatedMinutes;
-                                            let height = Math.max(28, displayDuration * PIXELS_PER_MINUTE);
-                                            const isDone = t.status === 'done' || currentTime > addMinutes(parseISO(t.dueAt!), t.estimatedMinutes);
+                                            let height = Math.max(28, displayDuration * PIXELS_PER_MINUTE) - 3;
+                                            const isDone = t.status === 'done';
                                             
                                             const isCurrent = (() => {
                                                 const startDate = parseISO(t.dueAt!);
@@ -1174,18 +1205,18 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                                         return (
                                             <div
                                                 key={`task-${t.id}-${index}`}
-                                                className={`absolute px-[9px] py-[3px] rounded-[12px] border-l-[3px] text-[10px] shadow-sm cursor-pointer flex items-center gap-1.5 overflow-hidden ${isPast || t.status === 'done' ? 'opacity-60 bg-bg-soft text-muted-soft border-line-soft' : 'hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(120,90,70,0.1)] z-[3] hover:z-[10]'}`}
+                                                className={`absolute px-[9px] py-[3px] rounded-[12px] border-l-[3px] text-[10px] shadow-sm cursor-pointer flex items-center gap-1.5 overflow-hidden ${t.status === 'done' ? 'opacity-60 bg-bg-soft text-muted-soft border-line-soft' : 'hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(120,90,70,0.1)] z-[3] hover:z-[10]'}`}
                                                 style={{
                                                     top: `${itemY-14}px`, height: '28px',
                                                     left: itemStyles.get(item)?.left || '4px', width: itemStyles.get(item)?.width || 'calc(100% - 8px)',
-                                                    backgroundColor: (isPast || t.status === 'done') ? undefined : styleObj.bg,
-                                                    borderLeft: (isPast || t.status === 'done') ? undefined : `3px solid ${styleObj.border}`,
-                                                    color: (isPast || t.status === 'done') ? undefined : styleObj.color
+                                                    backgroundColor: t.status === 'done' ? undefined : styleObj.bg,
+                                                    borderLeft: t.status === 'done' ? undefined : `3px solid ${styleObj.border}`,
+                                                    color: t.status === 'done' ? undefined : styleObj.color
                                                 }}
                                                 onClick={() => !selectionMode && setSelectedTask(t)}
                                             >
                                                 <div className="font-bold opacity-60 flex-shrink-0 text-[9px] uppercase tracking-wide">Due</div>
-                                                <div className={`truncate font-semibold ${isPast || t.status === 'done' ? 'line-through' : ''}`}>{format(parseISO(t.dueAt!), 'h:mm')} - {t.title}</div>
+                                                <div className={`truncate font-semibold ${t.status === 'done' ? 'line-through' : ''}`}>{format(parseISO(t.dueAt!), 'h:mm')} - {t.title}</div>
                                             </div>
                                         );
                                     }
@@ -1194,6 +1225,8 @@ export default function Calendar({ tasks: initialTasks, workBlocks: initialBlock
                         </div>
                     ))}
                 </div>
+                </div>
+            </div>
             </div>
         </div>
     );

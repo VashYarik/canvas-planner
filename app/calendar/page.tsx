@@ -44,7 +44,8 @@ export default async function CalendarPage() {
             }
         },
         include: {
-            course: true
+            course: true,
+            exceptions: true
         }
     });
 
@@ -73,12 +74,31 @@ export default async function CalendarPage() {
         }
     }));
 
+    const serializableClassPeriods = (classPeriods as any[]).map(cp => ({
+        id: cp.id,
+        dayOfWeek: cp.dayOfWeek,
+        startTime: cp.startTime,
+        endTime: cp.endTime,
+        location: cp.location,
+        course: {
+            id: cp.course.id,
+            name: cp.course.name,
+            code: cp.course.code,
+            color: cp.course.color
+        },
+        exceptions: cp.exceptions ? cp.exceptions.map((e: any) => ({
+            id: e.id,
+            date: e.date,
+            exceptionType: e.exceptionType
+        })) : []
+    }));
+
     return (
         <div className="h-full flex flex-col font-sans-dm text-text-gentle">
             <Calendar
                 tasks={serializableTasks}
                 workBlocks={serializableBlocks}
-                classPeriods={classPeriods}
+                classPeriods={serializableClassPeriods}
             />
         </div>
     );

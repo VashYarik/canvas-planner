@@ -44,6 +44,7 @@ model Course {
   user   User   @relation(fields: [userId], references: [id])
   tasks  Task[]
   classPeriods ClassPeriod[]
+  classExceptions ClassException[]
 }
 
 model ClassPeriod {
@@ -55,6 +56,20 @@ model ClassPeriod {
   location  String?
   
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  exceptions ClassException[]
+}
+
+model ClassException {
+  id            String   @id @default(uuid())
+  courseId      String
+  classPeriodId String
+  date          String   // "YYYY-MM-DD" representing the day of the exception
+  exceptionType String   @default("canceled") // "canceled", "rescheduled"
+
+  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classPeriod   ClassPeriod @relation(fields: [classPeriodId], references: [id], onDelete: Cascade)
+  
+  @@unique([classPeriodId, date])
 }
 
 model Task {

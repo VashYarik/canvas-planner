@@ -8,6 +8,7 @@ export default function TasksPage() {
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [initialCourseId, setInitialCourseId] = useState<string | undefined>(undefined);
 
     const fetchTasks = async () => {
         try {
@@ -23,6 +24,12 @@ export default function TasksPage() {
     };
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const cid = params.get('courseId');
+        if (cid) {
+            setInitialCourseId(cid);
+            setShowForm(true);
+        }
         fetchTasks();
     }, []);
 
@@ -72,7 +79,7 @@ export default function TasksPage() {
 
             {showForm && (
                 <div className="mb-10 p-6 sm:p-8 bg-card-soft rounded-2xl shadow-sm border border-line-soft transition-all">
-                    <TaskForm onSuccess={handleTaskCreated} />
+                    <TaskForm onSuccess={handleTaskCreated} initialCourseId={initialCourseId} />
                 </div>
             )}
 

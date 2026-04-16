@@ -1,0 +1,33 @@
+c:\Planer\app\components\AvailabilitySettings.tsx:54: if (res.ok) alert('Saved availability!');
+c:\Planer\app\components\AvailabilitySettings.tsx:55: else alert('Failed to save');
+c:\Planer\app\components\AvailabilitySettings.tsx:57: alert('Error saving');
+c:\Planer\app\components\Calendar.tsx:212: alert('Failed to delete some items');
+c:\Planer\app\components\Calendar.tsx:215: alert('Error deleting items');
+c:\Planer\app\components\Calendar.tsx:696: alert('Error updating schedule');
+c:\Planer\app\components\Calendar.tsx:780: } catch (error) { alert('Failed to add work block'); }
+c:\Planer\app\components\Calendar.tsx:1055: const styleObj = period.course.color ? {
+c:\Planer\app\components\Calendar.tsx:1068: backgroundColor: isPast ? Math.abs(getHashColor(period.id).bg.indexOf('var')) > -1 ? getHashColor(period.id).bg : styleObj.bg : styleObj.border,
+c:\Planer\app\components\Calendar.tsx:1069: borderLeft: `3px solid ${isPast ? styleObj.border : 'rgba(255,255,255,0.4)'}`,
+c:\Planer\app\components\Calendar.tsx:1070: color: isPast ? styleObj.color : '#ffffff',
+c:\Planer\app\components\Calendar.tsx:1086: const styleObj = getHashColor(wb.task.id);
+c:\Planer\app\components\Calendar.tsx:1112: backgroundColor: isDone ? styleObj.bg : styleObj.border,
+c:\Planer\app\components\Calendar.tsx:1113: borderLeft: `3px solid ${isDone ? styleObj.border : 'rgba(255,255,255,0.4)'}`,
+c:\Planer\app\components\Calendar.tsx:1114: color: isDone ? styleObj.color : '#ffffff',
+c:\Planer\app\components\Calendar.tsx:1140: const styleObj = getHashColor(t.id);
+c:\Planer\app\components\Calendar.tsx:1160: backgroundColor: isDone ? styleObj.bg : styleObj.border,
+c:\Planer\app\components\Calendar.tsx:1161: borderLeft: `3px solid ${isDone ? styleObj.border : 'rgba(255,255,255,0.4)'}`,
+c:\Planer\app\components\Calendar.tsx:1162: color: isDone ? styleObj.color : '#ffffff'
+c:\Planer\app\components\Calendar.tsx:1181: backgroundColor: (isPast || t.status === 'done') ? undefined : styleObj.bg,
+c:\Planer\app\components\Calendar.tsx:1182: borderLeft: (isPast || t.status === 'done') ? undefined : `3px solid ${styleObj.border}`,
+c:\Planer\app\components\Calendar.tsx:1183: color: (isPast || t.status === 'done') ? undefined : styleObj.color
+c:\Planer\app\components\TaskDetailsModal.tsx:59: alert('Failed to add work block');
+c:\Planer\app\components\TaskDetailsModal.tsx:86: alert('Failed to save changes');
+c:\Planer\app\components\TaskDetailsModal.tsx:103: alert('Failed to delete task');
+c:\Planer\app\components\TaskForm.tsx:91: alert('Failed to create task');
+c:\Planer\app\components\TaskForm.tsx:95: alert('Error creating task');
+c:\Planer\app\components\WorkBlockModal.tsx:54: alert('Failed to save changes');
+c:\Planer\app\components\WorkBlockModal.tsx:71: alert('Failed to delete block');
+c:\Planer\app\page.tsx:55: alert("Failed to generate schedule. Check console for details.");
+c:\Planer\app\tasks\page.tsx:45: alert('Failed to delete tasks');
+c:\Planer\lib\ai.ts:17: const prompt = `
+c:\Planer\lib\ai.ts:38: prompt,

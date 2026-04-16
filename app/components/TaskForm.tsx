@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import TimeSelect from './TimeSelect';
 
-export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
+export default function TaskForm({ onSuccess, initialCourseId }: { onSuccess: () => void, initialCourseId?: string }) {
     const now = new Date();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [month, setMonth] = useState(now.getMonth());
-    const [day, setDay] = useState(now.getDate());
+    const [dateStr, setDateStr] = useState(() => {
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    });
     const [time, setTime] = useState('23:59');
     const [estimatedMinutes, setEstimatedMinutes] = useState('');
     const [difficulty, setDifficulty] = useState('med');
@@ -28,7 +31,13 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
             .then(data => {
                 if (Array.isArray(data)) {
                     setCourses(data);
-                    if (data.length > 0) setSelectedCourseId(data[0].id);
+                    if (data.length > 0) {
+                        if (initialCourseId && data.some(c => c.id === initialCourseId)) {
+                            setSelectedCourseId(initialCourseId);
+                        } else {
+                            setSelectedCourseId(data[0].id);
+                        }
+                    }
                 }
                 setCoursesLoaded(true);
             })
@@ -39,21 +48,9 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
         e.preventDefault();
         setLoading(true);
 
-        // Calculate Year logic
-        const currentYear = new Date().getFullYear();
-        let targetYear = currentYear;
-        // Construct a candidate date for this year
-        const candidateDate = new Date(currentYear, month, day);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time for comparison
-
-        // If the month/day is in the past relative to today, assume next year
-        if (candidateDate < today) {
-            targetYear += 1;
-        }
-
+        const [year, m, d] = dateStr.split('-').map(Number);
         const [hours, minutes] = time.split(':').map(Number);
-        const dueAt = new Date(targetYear, month, day, hours, minutes);
+        const dueAt = new Date(year, m - 1, d, hours, minutes);
 
         try {
             const payload: any = {
@@ -80,8 +77,10 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                 setDescription('');
                 // Reset to today
                 const resetDate = new Date();
-                setMonth(resetDate.getMonth());
-                setDay(resetDate.getDate());
+                const y = resetDate.getFullYear();
+                const m = String(resetDate.getMonth() + 1).padStart(2, '0');
+                const d = String(resetDate.getDate()).padStart(2, '0');
+                setDateStr(`${y}-${m}-${d}`);
                 setTime('23:59');
                 setEstimatedMinutes('');
                 setDifficulty('med');
@@ -116,8 +115,12 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                 <label className="block text-sm font-medium text-gray-700">Description (Optional)</label>
                 <textarea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border min-h-[100px] transition-colors outline-none"
+                    onChange={(e) => {
+                        setDescription(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border min-h-[100px] transition-colors outline-none resize-none overflow-hidden"
                     placeholder="Add notes or details..."
                 />
             </div>
@@ -170,63 +173,23 @@ export default function TaskForm({ onSuccess }: { onSuccess: () => void }) {
                 </div>
             )}
 
-            <div className="grid grid-cols-12 gap-2">
-                <div className="col-span-6 sm:col-span-5">
-                    <label className="block text-sm font-medium text-gray-700">{isSchoolTask ? 'Due Date' : 'Target Date'}</label>
-                    <select
-                        value={day}
-                        onChange={(e) => setDay(parseInt(e.target.value))}
-                        className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
-                    >
-                        {(() => {
-                            // Calculate year for display purposes
-                            const currentYear = new Date().getFullYear();
-                            const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
-
-                            return Array.from({ length: daysInMonth }, (_, i) => {
-                                const d = i + 1;
-                                // Determine if this date is in the past for this year
-                                const tempDate = new Date(currentYear, month, d);
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-
-                                // Filter out past days if in current month
-                                if (month === today.getMonth() && d < today.getDate()) {
-                                    return null;
-                                }
-
-                                const targetY = tempDate < today ? currentYear + 1 : currentYear;
-                                const dateObj = new Date(targetY, month, d);
-                                const weekday = dateObj.toLocaleString('default', { weekday: 'long' });
-
-                                return (
-                                    <option key={d} value={d}>
-                                        {weekday} {d}
-                                    </option>
-                                );
-                            });
-                        })()}
-                    </select>
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{isSchoolTask ? 'Due Date' : 'Target Date'}</label>
+                    <input
+                        type="date"
+                        value={dateStr}
+                        onChange={(e) => setDateStr(e.target.value)}
+                        className="block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer text-text-soft uppercase tracking-wide font-medium"
+                    />
                 </div>
-                <div className="col-span-6 sm:col-span-4">
-                    <label className="block text-sm font-medium text-gray-700">Month</label>
-                    <select
-                        value={month}
-                        onChange={(e) => setMonth(parseInt(e.target.value))}
-                        className="mt-1.5 block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer"
-                    >
-                        {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i} value={i}>
-                                {new Date(0, i).toLocaleString('default', { month: 'long' })}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="col-span-12 sm:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                    <TimeSelect
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Time</label>
+                    <input
+                        type="time"
                         value={time}
-                        onChange={(val) => setTime(val)}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="block w-full rounded-xl border-line-soft bg-surface-soft shadow-sm focus:border-[#d4a090] focus:ring-[#d4a090] sm:text-sm p-3 border transition-colors outline-none cursor-pointer text-text-soft font-medium"
                     />
                 </div>
             </div>
